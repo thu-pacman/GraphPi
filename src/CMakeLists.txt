@@ -1,0 +1,4 @@
+SET(SOURCE_FILES
+TestClass.cpp)
+
+ADD_LIBRARY(graph_mining SHARED ${SOURCE_FILES}) 
