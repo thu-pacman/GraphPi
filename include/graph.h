@@ -1,3 +1,4 @@
+#pragma once
 class Graph {
 public:
     int v_cnt; // number of vertex
@@ -13,15 +14,19 @@ public:
     }
 
     ~Graph() {
-        delete[] edge;
-        delete[] vertex;
+        if(edge != nullptr) delete[] edge;
+        if(vertex != nullptr) delete[] vertex;
     }
-
-    void load_patent();
 
     int intersection_size(int v1,int v2);
 
+    //single thread triangle counting
     int triangle_counting();
     
+    //multi thread triangle counting
+    int triangle_counting_mt(int thread_count);
+private:
     double get_wall_time();
+    
+    void tc_mt(int * global_ans);
 };
