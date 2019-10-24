@@ -64,7 +64,6 @@ void Graph::tc_mt(int *global_ans) {
     int my_ans = 0;
     int my_rank = omp_get_thread_num();
     int thread_count = omp_get_num_threads();
-    int maxx = omp_get_max_threads();
     int left_v = (v_cnt / thread_count) * my_rank;
     int right_v = (v_cnt / thread_count) + left_v;
     if(my_rank == thread_count - 1) right_v = v_cnt;
