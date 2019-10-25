@@ -29,4 +29,6 @@ private:
     double get_wall_time();
     
     void tc_mt(int * global_ans);
+
+    void get_edge_index(int v, int& l, int& r) const;
 };

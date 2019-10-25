@@ -22,5 +22,7 @@ TEST(graph_mining_test, test_triangle_counting) {
     ASSERT_EQ(g->triangle_counting(), 7515023);
 
     ASSERT_EQ(g->triangle_counting_mt(24), 7515023);
+
+    delete g;
 }
 

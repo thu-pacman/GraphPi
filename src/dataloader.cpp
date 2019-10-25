@@ -39,6 +39,7 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
         if(tmp_v != g->v_cnt || tmp_e != g->e_cnt) {
             fclose(stdin);
             delete g;
+            delete e;
             return false;
         }
         std::sort(e,e+tmp_e,cmp_pair);
@@ -51,17 +52,20 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
                 return false;
             }
         g->edge = new int[g->e_cnt];
-        g->vertex = new int[g->v_cnt];
+        g->vertex = new int[g->v_cnt + 1];
         int lst_v = -1;
         for(int i = 0; i < g->v_cnt; ++i) g->vertex[i] = -1;
         for(int i = 0; i < g->e_cnt; ++i) {
-            if(e[i].first != lst_v) g->vertex[e[i].first] = i;
+            if(e[i].first != lst_v)
+                g->vertex[e[i].first] = i;
             lst_v = e[i].first;
             g->edge[i] = e[i].second;
         }
         delete[] e;
         printf("Success! There are %d nodes and %d edges.\n",g->v_cnt,g->e_cnt);
-        if(g->vertex[g->v_cnt - 1] == -1) g->vertex[g->v_cnt - 1] = g->e_cnt;
+        if(g->vertex[g->v_cnt - 1] == -1)
+            g->vertex[g->v_cnt - 1] = g->e_cnt;
+        g->vertex[g->v_cnt] = g->e_cnt;
         for(int i = g->v_cnt - 2; i >= 0; --i)
             if(g->vertex[i] == -1) {
                 g->vertex[i] = g->vertex[i+1];
