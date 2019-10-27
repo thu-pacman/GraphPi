@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-TEST(graph_mining_test, test_triangle_counting) {
+TEST(graph_mining_test, patents_triangle_counting) {
     Graph *g;
     DataLoader D;
     
@@ -48,6 +48,38 @@ TEST(graph_mining_test, test_triangle_counting) {
     thread_num = 24;
     t1 = get_wall_time();
     ASSERT_EQ(g->pattern_matching(tc_schedule, thread_num), 7515023 * 6);
+    t2 = get_wall_time();
+    printf("general %d thread TC time: %.6lf\n", thread_num, t2 - t1);
+
+    delete g;
+}
+
+TEST(graph_mining_test, orkut_triangle_counting) {
+    Graph *g;
+    DataLoader D;
+    
+    std::string type = "Orkut";
+    std::string path = "/home/zms/orkut_input";
+    DataType my_type;
+    my_type = DataType::Orkut;
+    
+    ASSERT_EQ(D.load_data(g,my_type,path.c_str()),true); 
+
+    double t1 = get_wall_time();
+    int thread_num = 24;
+    ASSERT_EQ(g->triangle_counting_mt(thread_num), 627584181);
+    double t2 = get_wall_time();
+    printf("brute force %d thread TC time: %.6lf\n", thread_num, t2 - t1);
+
+    Pattern tc_pattern(3);
+    tc_pattern.add_edge(0, 1);
+    tc_pattern.add_edge(0, 2);
+    tc_pattern.add_edge(1, 2);
+    Schedule tc_schedule(tc_pattern);
+
+    thread_num = 24;
+    t1 = get_wall_time();
+    ASSERT_EQ(g->pattern_matching(tc_schedule, thread_num), 627584181ll * 6);
     t2 = get_wall_time();
     printf("general %d thread TC time: %.6lf\n", thread_num, t2 - t1);
 
