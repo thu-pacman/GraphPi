@@ -1,6 +1,8 @@
 #include "../include/dataloader.h"
 #include "../include/graph.h"
+#include "../include/vertex_set.h"
 #include <cstdlib>
+#include <cstring>
 
 bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
     if(type == Patents) {
@@ -8,6 +10,8 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
         printf("Load Patent begin in %s\n",path);
         g = new Graph();
         scanf("%d%d",&g->v_cnt,&g->e_cnt);
+        int* degree = new int[g->v_cnt];
+        memset(degree, 0, g->v_cnt * sizeof(int));
         g->e_cnt *= 2;
         std::pair<int,int> *e = new std::pair<int,int>[g->e_cnt];
         id.clear();
@@ -28,8 +32,14 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
             y = id[y];
             e[tmp_e++] = std::make_pair(x,y);
             e[tmp_e++] = std::make_pair(y,x);
+            ++degree[x];
+            ++degree[y];
             if(tmp_e % 1000000 == 0) printf("load %d edges\n",tmp_e);
         }
+        std::sort(degree, degree + g->v_cnt);
+        // The max size of intersections is the second largest degree.
+        VertexSet::max_intersection_size = degree[g->v_cnt - 2];
+        delete[] degree;
         if(tmp_v != g->v_cnt) {
             printf("vertex number error!\n");
         }
@@ -39,7 +49,7 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
         if(tmp_v != g->v_cnt || tmp_e != g->e_cnt) {
             fclose(stdin);
             delete g;
-            delete e;
+            delete[] e;
             return false;
         }
         std::sort(e,e+tmp_e,cmp_pair);
@@ -49,6 +59,7 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
                 printf("have same edge\n");
                 fclose(stdin);
                 delete g;
+                delete[] e;
                 return false;
             }
         g->edge = new int[g->e_cnt];
@@ -72,6 +83,7 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
             }
         return true;
     }
+    printf("invalid DataType!\n");
     return false;
 }
 
