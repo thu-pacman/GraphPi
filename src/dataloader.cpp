@@ -5,9 +5,9 @@
 #include <cstring>
 
 bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
-    if(type == Patents) {
+    if(type == Patents || type == Orkut) {
         freopen(path, "r", stdin);
-        printf("Load Patent begin in %s\n",path);
+        printf("Load begin in %s\n",path);
         g = new Graph();
         scanf("%d%d",&g->v_cnt,&g->e_cnt);
         int* degree = new int[g->v_cnt];
