@@ -32,6 +32,37 @@ int Graph::intersection_size(int v1,int v2) {
     return ans;
 }
 
+int Graph::intersection_size_clique(int v1,int v2) {
+    int l1, r1;
+    get_edge_index(v1, l1, r1);
+    int l2, r2;
+    get_edge_index(v2, l2, r2);
+    int min_vertex = v2;
+    int ans = 0;
+    if (edge[l1] >= min_vertex || edge[l2] >= min_vertex)
+        return 0;
+    while(l1 < r1 && l2 < r2) {
+        if(edge[l1] < edge[l2]) {
+            if (edge[++l1] >= min_vertex)
+                break;
+        }
+        else {
+            if(edge[l2] < edge[l1]) {
+                if (edge[++l2] >= min_vertex)
+                    break;
+            }
+            else {
+                ++ans;
+                if (edge[++l1] >= min_vertex)
+                    break;
+                if (edge[++l2] >= min_vertex)
+                    break;
+            }
+        }
+    }
+    return ans;
+}
+
 long long Graph::triangle_counting() {
     long long ans = 0;
     for(int v = 0; v < v_cnt; ++v) {
@@ -53,7 +84,6 @@ long long Graph::triangle_counting_mt(int thread_count) {
     {
         tc_mt(&ans);
     }
-    ans /= 6;
     return ans;
 }
 
@@ -65,8 +95,10 @@ void Graph::tc_mt(long long *global_ans) {
         int l, r;
         get_edge_index(v, l, r);
         for(int v1 = l; v1 < r; ++v1) {
+            if (v <= edge[v1])
+                break;
             //for v1 in N(v)
-            my_ans += intersection_size(v,edge[v1]);
+            my_ans += intersection_size_clique(v,edge[v1]);
         }
     }
     #pragma omp critical

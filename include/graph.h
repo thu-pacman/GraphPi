@@ -21,6 +21,7 @@ public:
     }
 
     int intersection_size(int v1,int v2);
+    int intersection_size_clique(int v1,int v2);
 
     //single thread triangle counting
     long long triangle_counting();

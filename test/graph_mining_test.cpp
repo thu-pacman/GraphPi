@@ -28,11 +28,16 @@ TEST(graph_mining_test, patents_triangle_counting) {
     double t2 = get_wall_time();
     printf("brute force single thread TC time: %.6lf\n", t2 - t1);
 
-    t1 = get_wall_time();
+    double sum_time = 0.0;
     int thread_num = 24;
-    ASSERT_EQ(g->triangle_counting_mt(thread_num), 7515023);
-    t2 = get_wall_time();
-    printf("brute force %d thread TC time: %.6lf\n", thread_num, t2 - t1);
+    for (int times = 0; times < 10; ++times)
+    {
+        t1 = get_wall_time();
+        ASSERT_EQ(g->triangle_counting_mt(thread_num), 7515023);
+        t2 = get_wall_time();
+        sum_time += t2 - t1;
+    }
+    printf("brute force %d thread TC time: %.6lf\n", thread_num, sum_time / 10);
 
     Pattern tc_pattern(3);
     tc_pattern.add_edge(0, 1);
