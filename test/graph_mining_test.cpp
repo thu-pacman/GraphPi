@@ -51,6 +51,11 @@ TEST(graph_mining_test, patents_triangle_counting) {
     t2 = get_wall_time();
     printf("general %d thread TC time: %.6lf\n", thread_num, t2 - t1);
 
+    t1 = get_wall_time();
+    ASSERT_EQ(g->pattern_matching(tc_schedule, thread_num, true), 7515023);
+    t2 = get_wall_time();
+    printf("general %d thread TC with root symmetry time: %.6lf\n", thread_num, t2 - t1);
+
     delete g;
 }
 
@@ -82,6 +87,11 @@ TEST(graph_mining_test, orkut_triangle_counting) {
     ASSERT_EQ(g->pattern_matching(tc_schedule, thread_num), 627584181ll * 6);
     t2 = get_wall_time();
     printf("general %d thread TC time: %.6lf\n", thread_num, t2 - t1);
+
+    t1 = get_wall_time();
+    ASSERT_EQ(g->pattern_matching(tc_schedule, thread_num, true), 627584181);
+    t2 = get_wall_time();
+    printf("general %d thread TC with root symmetry time: %.6lf\n", thread_num, t2 - t1);
 
     delete g;
 }

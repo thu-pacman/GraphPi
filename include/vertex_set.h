@@ -19,6 +19,7 @@ public:
     inline int* get_data_ptr() { return data;}
     inline void push_back(int val) { data[size++] = val;}
     inline void pop_back() { --size;}
+    inline int get_last() const { return data[size - 1];}
     bool has_data(int val);
     static int max_intersection_size;
     void build_vertex_set(const Schedule& schedule, const VertexSet* vertex_set, int* input_data, int input_size, int prefix_id);

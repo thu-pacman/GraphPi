@@ -105,11 +105,13 @@ bool VertexSet::has_data(int val)
 
 int VertexSet::unorderd_subtraction_size(const VertexSet& set0, const VertexSet& set1)
 {
+    int size0 = set0.get_size();
     int size1 = set1.get_size();
 
-    int ret = set0.get_size();
+    int ret = size0;
+    const int* set0_ptr = set0.get_data_ptr();
     for (int j = 0; j < size1; ++j)
-        if (std::binary_search(set0.get_data_ptr(), set0.get_data_ptr() + set0.get_size(), set1.get_data(j)))
+        if (std::binary_search(set0_ptr, set0_ptr + size0, set1.get_data(j)))
             --ret;
     return ret;
 }

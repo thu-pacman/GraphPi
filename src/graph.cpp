@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <omp.h>
+#include <algorithm>
 
 int Graph::intersection_size(int v1,int v2) {
     int l1, r1;
@@ -80,20 +81,32 @@ void Graph::get_edge_index(int v, int& l, int& r) const
     r = vertex[v + 1];
 }
 
-void Graph::pattern_matching_func(const Schedule& schedule, VertexSet* vertex_set, VertexSet& subtraction_set, long long& local_ans, int depth)
+void Graph::pattern_matching_func(const Schedule& schedule, VertexSet* vertex_set, VertexSet& subtraction_set, long long& local_ans, int depth, bool clique)
 {
     int loop_set_prefix_id = schedule.get_loop_set_prefix_id(depth);
     int loop_size = vertex_set[loop_set_prefix_id].get_size();
+    if (loop_size <= 0)
+        return;
     int* loop_data_ptr = vertex_set[loop_set_prefix_id].get_data_ptr();
+    int loop_start = 0;
+    if (clique == true)
+    {
+        int last_vertex = subtraction_set.get_last();
+        // The number of this vertex must be greater than the number of last vertex.
+        loop_start = std::upper_bound(loop_data_ptr, loop_data_ptr + loop_size, last_vertex) - loop_data_ptr;
+    }
     if (depth == schedule.get_size() - 1)
     {
         // TODO : try more kinds of calculation.
         // For example, we can maintain an ordered set, but it will cost more to maintain itself when entering or exiting recursion.
-        if (loop_size > 0)
+        if (clique == true)
+            local_ans += loop_size - loop_start;
+        else if (loop_size > 0)
             local_ans += VertexSet::unorderd_subtraction_size(vertex_set[loop_set_prefix_id], subtraction_set);
         return;
     }
-    for (int i = 0; i < loop_size; ++i)
+    
+    for (int i = loop_start; i < loop_size; ++i)
     {
         int vertex = loop_data_ptr[i];
         if (subtraction_set.has_data(vertex))
@@ -106,12 +119,12 @@ void Graph::pattern_matching_func(const Schedule& schedule, VertexSet* vertex_se
         }
         //subtraction_set.insert_ans_sort(vertex);
         subtraction_set.push_back(vertex);
-        pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, depth + 1);
+        pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, depth + 1, clique);
         subtraction_set.pop_back();
     }
 }
 
-long long Graph::pattern_matching(const Schedule& schedule, int thread_count)
+long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bool clique)
 {
     long long global_ans = 0;
     #pragma omp parallel num_threads(thread_count) reduction(+: global_ans)
@@ -132,7 +145,7 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count)
             }
             //subtraction_set.insert_ans_sort(vertex);
             subtraction_set.push_back(vertex);
-            pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, 1);
+            pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, 1, clique);
             subtraction_set.pop_back();
         }
         delete[] vertex_set;
