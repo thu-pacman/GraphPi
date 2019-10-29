@@ -120,34 +120,37 @@ void Graph::pattern_matching_func(const Schedule& schedule, VertexSet* vertex_se
     if (loop_size <= 0)
         return;
     int* loop_data_ptr = vertex_set[loop_set_prefix_id].get_data_ptr();
-    int loop_start = 0;
-    if (clique == true)
+    /*if (clique == true)
     {
         int last_vertex = subtraction_set.get_last();
         // The number of this vertex must be greater than the number of last vertex.
         loop_start = std::upper_bound(loop_data_ptr, loop_data_ptr + loop_size, last_vertex) - loop_data_ptr;
-    }
+    }*/
     if (depth == schedule.get_size() - 1)
     {
         // TODO : try more kinds of calculation.
         // For example, we can maintain an ordered set, but it will cost more to maintain itself when entering or exiting recursion.
         if (clique == true)
-            local_ans += loop_size - loop_start;
+            local_ans += loop_size;
         else if (loop_size > 0)
             local_ans += VertexSet::unorderd_subtraction_size(vertex_set[loop_set_prefix_id], subtraction_set);
         return;
     }
     
-    for (int i = loop_start; i < loop_size; ++i)
+    int last_vertex = subtraction_set.get_last();
+    for (int i = 0; i < loop_size; ++i)
     {
+        if (last_vertex <= loop_data_ptr[i] && clique == true)
+            break;
         int vertex = loop_data_ptr[i];
-        if (subtraction_set.has_data(vertex))
-            continue;
+        if (!clique)
+            if (subtraction_set.has_data(vertex))
+                continue;
         int l, r;
         get_edge_index(vertex, l, r);
         for (int prefix_id = schedule.get_last(depth); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
         {
-            vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], r - l, prefix_id);
+            vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], r - l, prefix_id, vertex, clique);
         }
         //subtraction_set.insert_ans_sort(vertex);
         subtraction_set.push_back(vertex);
