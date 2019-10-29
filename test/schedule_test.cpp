@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
 #include "../include/pattern.h"
 #include "../include/schedule.h"
+#include "../include/motif_generator.h"
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 TEST(schedule_test, build_loop_invariant)
 {
@@ -42,4 +44,18 @@ TEST(schedule_test, build_loop_invariant)
     ASSERT_EQ(schedule5.get_father_prefix_id(3), 2);
     ASSERT_EQ(schedule5.get_father_prefix_id(2), 0);
 
+}
+
+TEST(motif_generator_test, motif_generator)
+{
+    MotifGenerator mg0(3);
+    std::vector<Pattern> patterns = mg0.generate();
+    ASSERT_EQ(patterns.size(), 2);
+    for (const Pattern& p : patterns)
+    {
+        p.print();
+    }
+    MotifGenerator mg1(4);
+    patterns = mg1.generate();
+    ASSERT_EQ(patterns.size(), 6);
 }
