@@ -11,7 +11,7 @@ public:
     ~VertexSet();
     void intersection(const VertexSet& set0, const VertexSet& set1, int min_vertex = -1, bool clique = false);
     //set1 is unordered
-    static int unorderd_subtraction_size(const VertexSet& set0, const VertexSet& set1);
+    static int unorderd_subtraction_size(const VertexSet& set0, const VertexSet& set1, int size_after_restrict = -1);
     void insert_ans_sort(int val);
     inline int get_size() const { return size;}
     inline int get_data(int i) const { return data[i];}

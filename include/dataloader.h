@@ -6,7 +6,8 @@
 
 enum DataType {
     Patents,
-    Orkut
+    Orkut,
+    complete8
 };
 
 class DataLoader {

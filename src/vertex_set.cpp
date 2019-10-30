@@ -133,10 +133,12 @@ bool VertexSet::has_data(int val)
     return false;
 }
 
-int VertexSet::unorderd_subtraction_size(const VertexSet& set0, const VertexSet& set1)
+int VertexSet::unorderd_subtraction_size(const VertexSet& set0, const VertexSet& set1, int size_after_restrict)
 {
     int size0 = set0.get_size();
     int size1 = set1.get_size();
+    if (size_after_restrict != -1)
+        size0 = size_after_restrict;
 
     int ret = size0;
     const int* set0_ptr = set0.get_data_ptr();

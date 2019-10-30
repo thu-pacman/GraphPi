@@ -180,7 +180,10 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
             }
             //subtraction_set.insert_ans_sort(vertex);
             subtraction_set.push_back(vertex);
-            pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, 1, clique);
+            if (schedule.get_total_restrict_num() > 0 && clique == false)
+                pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, 1);
+            else
+                pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, 1, clique);
             subtraction_set.pop_back();
         }
         delete[] vertex_set;
@@ -189,4 +192,56 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
         global_ans += local_ans;
     }
     return global_ans;
+}
+
+void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet* vertex_set, VertexSet& subtraction_set, long long& local_ans, int depth)
+{
+    int loop_set_prefix_id = schedule.get_loop_set_prefix_id(depth);
+    int loop_size = vertex_set[loop_set_prefix_id].get_size();
+    if (loop_size <= 0)
+        return;
+    int* loop_data_ptr = vertex_set[loop_set_prefix_id].get_data_ptr();
+    if (depth == schedule.get_size() - 1)
+    {
+        // TODO : try more kinds of calculation.
+        // For example, we can maintain an ordered set, but it will cost more to maintain itself when entering or exiting recursion.
+        if (schedule.get_total_restrict_num() > 0)
+        {
+            int min_vertex = v_cnt;
+            for (int i = schedule.get_restrict_last(depth); i != -1; i = schedule.get_restrict_next(i))
+                if (min_vertex > subtraction_set.get_data(schedule.get_restrict_index(i)))
+                    min_vertex = subtraction_set.get_data(schedule.get_restrict_index(i));
+            const VertexSet& vset = vertex_set[loop_set_prefix_id];
+            int size_after_restrict = std::lower_bound(vset.get_data_ptr(), vset.get_data_ptr() + vset.get_size(), min_vertex) - vset.get_data_ptr();
+            if (size_after_restrict > 0)
+                local_ans += VertexSet::unorderd_subtraction_size(vertex_set[loop_set_prefix_id], subtraction_set, size_after_restrict);
+        }
+        else
+            local_ans += VertexSet::unorderd_subtraction_size(vertex_set[loop_set_prefix_id], subtraction_set);
+        return;
+    }
+    
+    // TODO : min_vertex is also a loop invariant
+    int min_vertex = v_cnt;
+    for (int i = schedule.get_restrict_last(depth); i != -1; i = schedule.get_restrict_next(i))
+        if (min_vertex > subtraction_set.get_data(schedule.get_restrict_index(i)))
+            min_vertex = subtraction_set.get_data(schedule.get_restrict_index(i));
+    for (int i = 0; i < loop_size; ++i)
+    {
+        if (min_vertex <= loop_data_ptr[i])
+            break;
+        int vertex = loop_data_ptr[i];
+        if (subtraction_set.has_data(vertex))
+            continue;
+        int l, r;
+        get_edge_index(vertex, l, r);
+        for (int prefix_id = schedule.get_last(depth); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
+        {
+            vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], r - l, prefix_id, vertex);
+        }
+        //subtraction_set.insert_ans_sort(vertex);
+        subtraction_set.push_back(vertex);
+        pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, depth + 1);
+        subtraction_set.pop_back();
+    }
 }
