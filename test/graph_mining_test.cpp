@@ -28,11 +28,16 @@ TEST(graph_mining_test, patents_triangle_counting) {
     double t2 = get_wall_time();
     printf("brute force single thread TC time: %.6lf\n", t2 - t1);
 
-    t1 = get_wall_time();
+    double sum_time = 0.0;
     int thread_num = 24;
-    ASSERT_EQ(g->triangle_counting_mt(thread_num), 7515023);
-    t2 = get_wall_time();
-    printf("brute force %d thread TC time: %.6lf\n", thread_num, t2 - t1);
+    for (int times = 0; times < 10; ++times)
+    {
+        t1 = get_wall_time();
+        ASSERT_EQ(g->triangle_counting_mt(thread_num), 7515023);
+        t2 = get_wall_time();
+        sum_time += t2 - t1;
+    }
+    printf("brute force %d thread TC time: %.6lf\n", thread_num, sum_time / 10);
 
     Pattern tc_pattern(3);
     tc_pattern.add_edge(0, 1);
@@ -49,8 +54,24 @@ TEST(graph_mining_test, patents_triangle_counting) {
     t1 = get_wall_time();
     ASSERT_EQ(g->pattern_matching(tc_schedule, thread_num), 7515023 * 6);
     t2 = get_wall_time();
-    printf("general %d thread TC time: %.6lf\n", thread_num, t2 - t1);
+    printf("general %d thread TC without root symmetry time: %.6lf\n", thread_num, t2 - t1);
 
+    t1 = get_wall_time();
+    ASSERT_EQ(g->pattern_matching(tc_schedule, thread_num, true), 7515023);
+    t2 = get_wall_time();
+    printf("general %d thread TC with root symmetry time: %.6lf\n", thread_num, t2 - t1);
+
+    Pattern clique4(4);
+    for (int i = 0; i < 4; ++i)
+        for (int j = i + 1; j < 4; ++j)
+            clique4.add_edge(i, j);
+    Schedule clique4_schedule(clique4);
+
+    t1 = get_wall_time();
+    //ASSERT_EQ(g->pattern_matching(clique4_schedule, thread_num, true), 7515023);
+    g->pattern_matching(clique4_schedule, thread_num, false);
+    t2 = get_wall_time();
+    printf("general %d thread Clique4 without root symmetry time: %.6lf\n", thread_num, t2 - t1);
     delete g;
 }
 
@@ -81,7 +102,58 @@ TEST(graph_mining_test, orkut_triangle_counting) {
     t1 = get_wall_time();
     ASSERT_EQ(g->pattern_matching(tc_schedule, thread_num), 627584181ll * 6);
     t2 = get_wall_time();
-    printf("general %d thread TC time: %.6lf\n", thread_num, t2 - t1);
+    printf("general %d thread TC without root symmetry time: %.6lf\n", thread_num, t2 - t1);
+
+    t1 = get_wall_time();
+    ASSERT_EQ(g->pattern_matching(tc_schedule, thread_num, true), 627584181);
+    t2 = get_wall_time();
+    printf("general %d thread TC with root symmetry time: %.6lf\n", thread_num, t2 - t1);
+
+    Pattern clique4(4);
+    for (int i = 0; i < 4; ++i)
+        for (int j = i + 1; j < 4; ++j)
+            clique4.add_edge(i, j);
+    Schedule clique4_schedule(clique4);
+
+    t1 = get_wall_time();
+    //ASSERT_EQ(g->pattern_matching(clique4_schedule, thread_num, true), 7515023);
+    g->pattern_matching(clique4_schedule, thread_num, false);
+    t2 = get_wall_time();
+    printf("general %d thread Clique4 without root symmetry time: %.6lf\n", thread_num, t2 - t1);
+
+    Pattern clique6(6);
+    for (int i = 0; i < 6; ++i)
+        for (int j = i + 1; j < 6; ++j)
+            clique6.add_edge(i, j);
+    Schedule clique6_schedule(clique6);
+
+    t1 = get_wall_time();
+    g->pattern_matching(clique6_schedule, thread_num, true);
+    t2 = get_wall_time();
+    printf("general %d thread Clique6 with root symmetry time: %.6lf\n", thread_num, t2 - t1);
+
+    Pattern clique7(7);
+    for (int i = 0; i < 7; ++i)
+        for (int j = i + 1; j < 7; ++j)
+            clique7.add_edge(i, j);
+    Schedule clique7_schedule(clique7);
+
+    t1 = get_wall_time();
+    g->pattern_matching(clique7_schedule, thread_num, true);
+    t2 = get_wall_time();
+    printf("general %d thread Clique7 with root symmetry time: %.6lf\n", thread_num, t2 - t1);
+
+    Pattern clique8(8);
+    for (int i = 0; i < 8; ++i)
+        for (int j = i + 1; j < 8; ++j)
+            clique8.add_edge(i, j);
+    Schedule clique8_schedule(clique8);
+
+    t1 = get_wall_time();
+    g->pattern_matching(clique8_schedule, thread_num, true);
+    t2 = get_wall_time();
+    printf("general %d thread Clique8 with root symmetry time: %.6lf\n", thread_num, t2 - t1);
+
 
     delete g;
 }

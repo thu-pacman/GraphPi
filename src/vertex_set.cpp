@@ -34,7 +34,7 @@ VertexSet::~VertexSet()
         delete[] data;
 }
 
-void VertexSet::intersection(const VertexSet& set0, const VertexSet& set1)
+void VertexSet::intersection(const VertexSet& set0, const VertexSet& set1, int min_vertex, bool clique)
 {
     int i = 0;
     int j = 0;
@@ -48,24 +48,54 @@ void VertexSet::intersection(const VertexSet& set0, const VertexSet& set1)
     //     ..., if (++j == size1) break;
     //     ......
     // Maybe we can also use binary search if one set is very small and another is large.
-    while (i < size0 && j < size1)
-    {
-        int data0 = set0.get_data(i);
-        int data1 = set1.get_data(j);
-        if (data0 < data1)
-            ++i;
-        else if (data0 > data1)
-            ++j;
-        else
+    if (clique == true)
+        if (set0.get_data(0) >= min_vertex || set1.get_data(0) >= min_vertex)
+            return;
+    int data0 = set0.get_data(0);
+    int data1 = set1.get_data(0);
+    if (clique)
+        // TODO : Try more kinds of calculation.
+        // For example, we can use binary search find the last element which is smaller than min_vertex, and set its index as loop_size.
+        while (i < size0 && j < size1)
         {
-            ++i;
-            ++j;
-            push_back(data0);
+            if (data0 < data1)
+            {
+                if ((data0 = set0.get_data(++i)) >= min_vertex)
+                    break;
+            }
+            else if (data0 > data1)
+            {
+                if ((data1 = set1.get_data(++j)) >= min_vertex)
+                    break;
+            }
+            else
+            {
+                push_back(data0);
+                if ((data0 = set0.get_data(++i)) >= min_vertex)
+                    break;
+                if ((data1 = set1.get_data(++j)) >= min_vertex)
+                    break;
+            }
         }
-    }
+    else
+        while (i < size0 && j < size1)
+        {
+            data0 = set0.get_data(i);
+            data1 = set1.get_data(j);
+            if (data0 < data1)
+                ++i;
+            else if (data0 > data1)
+                ++j;
+            else
+            {
+                push_back(data0);
+                ++i;
+                ++j;
+            }
+        }
 }
 
-void VertexSet::build_vertex_set(const Schedule& schedule, const VertexSet* vertex_set, int* input_data, int input_size, int prefix_id)
+void VertexSet::build_vertex_set(const Schedule& schedule, const VertexSet* vertex_set, int* input_data, int input_size, int prefix_id, int min_vertex, bool clique)
 {
     int father_id = schedule.get_father_prefix_id(prefix_id);
     if (father_id == -1)
@@ -75,7 +105,7 @@ void VertexSet::build_vertex_set(const Schedule& schedule, const VertexSet* vert
         init();
         VertexSet tmp_vset;
         tmp_vset.init(input_size, input_data);
-        intersection(vertex_set[father_id], tmp_vset);
+        intersection(vertex_set[father_id], tmp_vset, min_vertex, clique);
     }
 }
 
@@ -103,13 +133,17 @@ bool VertexSet::has_data(int val)
     return false;
 }
 
-int VertexSet::unorderd_subtraction_size(const VertexSet& set0, const VertexSet& set1)
+int VertexSet::unorderd_subtraction_size(const VertexSet& set0, const VertexSet& set1, int size_after_restrict)
 {
+    int size0 = set0.get_size();
     int size1 = set1.get_size();
+    if (size_after_restrict != -1)
+        size0 = size_after_restrict;
 
-    int ret = set0.get_size();
+    int ret = size0;
+    const int* set0_ptr = set0.get_data_ptr();
     for (int j = 0; j < size1; ++j)
-        if (std::binary_search(set0.get_data_ptr(), set0.get_data_ptr() + set0.get_size(), set1.get_data(j)))
+        if (std::binary_search(set0_ptr, set0_ptr + size0, set1.get_data(j)))
             --ret;
     return ret;
 }

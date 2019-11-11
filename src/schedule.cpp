@@ -17,11 +17,17 @@ Schedule::Schedule(const Pattern& pattern)
     next = new int[max_prefix_num];
     loop_set_prefix_id = new int[size];
     prefix = new Prefix[max_prefix_num];
+    restrict_last = new int[size];
+    restrict_next = new int[max_prefix_num];
+    restrict_index = new int[max_prefix_num];
     memset(father_prefix_id, -1, max_prefix_num * sizeof(int));
     memset(last, -1, size * sizeof(int));
     memset(next, -1, max_prefix_num * sizeof(int));
+    memset(restrict_last, -1, size * sizeof(int));
+    memset(restrict_next, -1, max_prefix_num * sizeof(int));
 
     total_prefix_num = 0;
+    total_restrict_num = 0;
 
     // The I-th vertex must connect with at least one vertex from 0 to i-1.
     for (int i = 1; i < size; ++i)
@@ -51,6 +57,9 @@ Schedule::~Schedule()
     delete[] next;
     delete[] loop_set_prefix_id;
     delete[] prefix;
+    delete[] restrict_last;
+    delete[] restrict_next;
+    delete[] restrict_index;
 }
 
 void Schedule::build_loop_invariant()
@@ -86,4 +95,20 @@ int Schedule::find_father_prefix(int data_size, const int* data)
     prefix[total_prefix_num].init(data_size, data);
     ++total_prefix_num;
     return total_prefix_num - 1;
+}
+
+void Schedule::add_restrict(const std::vector< std::pair<int, int> >& restricts)
+{
+    int max_prefix_num = size * (size - 1) / 2;
+    memset(restrict_last, -1, size * sizeof(int));
+    memset(restrict_next, -1, max_prefix_num * sizeof(int));
+    total_restrict_num = 0;
+    for (const auto& p : restricts)
+    {
+        // p.first must be greater than p.second
+        restrict_index[total_restrict_num] = p.first;
+        restrict_next[total_restrict_num] = restrict_last[p.second];
+        restrict_last[p.second] = total_restrict_num;
+        ++total_restrict_num;
+    }
 }

@@ -5,8 +5,12 @@
 #include <cstring>
 
 bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
-    if(type == Patents || type == Orkut) {
-        freopen(path, "r", stdin);
+    if(type == Patents || type == Orkut || type == complete8) {
+        if (freopen(path, "r", stdin) == NULL)
+        {
+            printf("File not found. %s\n", path);
+            return false;
+        }
         printf("Load begin in %s\n",path);
         g = new Graph();
         scanf("%d%d",&g->v_cnt,&g->e_cnt);
