@@ -8,8 +8,13 @@
 
 #include <iostream>
 #include <string>
+#include <mpi.h>
 
 TEST(graph_mining_test, patents_triangle_counting) {
+    int size, rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    printf("%d of %d\n", rank, size);
     Graph *g;
     DataLoader D;
     
