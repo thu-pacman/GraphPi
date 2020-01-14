@@ -4,8 +4,8 @@
 #include <cstdlib>
 #include <cstring>
 
-bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
-    if(type == Patents || type == Orkut || type == complete8) {
+bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int oriented_type) {
+    if(type == Patents || type == Orkut || type == complete8 || type == LiveJournal) {
         if (freopen(path, "r", stdin) == NULL)
         {
             printf("File not found. %s\n", path);
@@ -39,6 +39,22 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
             ++degree[x];
             ++degree[y];
             if(tmp_e % 1000000 == 0) printf("load %d edges\n",tmp_e);
+        }
+        if ( oriented_type != 0 ) {
+            std::pair<int,int> *rank = new std::pair<int,int>[g->v_cnt];
+            int *new_id = new int[g->v_cnt];
+            for(int i = 0; i < g->v_cnt; ++i) rank[i] = std::make_pair(i,degree[i]);
+            if( oriented_type == 1) std::sort(rank, rank + g->v_cnt, cmp_degree_gt);
+            if( oriented_type == 2) std::sort(rank, rank + g->v_cnt, cmp_degree_lt);
+            for(int i = 0; i < g->v_cnt; ++i) new_id[rank[i].first] = i;
+//            for(int i = 0; i < g->v_cnt; ++i) 
+//                if( rank[i].second < rank[i + 1].second ) puts("wrong");
+            for(int i = 0; i < g->e_cnt; ++i) {
+                e[i].first = new_id[e[i].first];
+                e[i].second = new_id[e[i].second];
+            }
+            delete[] rank;
+            delete[] new_id;
         }
         std::sort(degree, degree + g->v_cnt);
         // The max size of intersections is the second largest degree.
@@ -93,4 +109,12 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path) {
 
 bool DataLoader::cmp_pair(std::pair<int,int>a, std::pair<int,int>b) {
     return a.first < b.first || (a.first == b.first && a.second < b.second);
+}
+
+bool DataLoader::cmp_degree_gt(std::pair<int,int> a,std::pair<int,int> b) {
+    return a.second > b.second;
+}
+
+bool DataLoader::cmp_degree_lt(std::pair<int,int> a,std::pair<int,int> b) {
+    return a.second < b.second;
 }

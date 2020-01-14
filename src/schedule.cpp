@@ -2,12 +2,34 @@
 #include <cstdio>
 #include <cstring>
 #include <assert.h>
+#include <algorithm>
 
-Schedule::Schedule(const Pattern& pattern)
+Schedule::Schedule(const Pattern& pattern, bool &is_valid, bool use_performance_modeling, int dataset_vertex_size, int dataset_edge_size)
 {
+    is_valid = true;
     size = pattern.get_size();
     adj_mat = new int[size * size];
-    memcpy(adj_mat, pattern.get_adj_mat_ptr(), size * size * sizeof(int));
+
+    if( use_performance_modeling) {
+
+        const int* pattern_adj_mat = pattern.get_adj_mat_ptr();
+        int *best_order;
+        best_order = new int[size];
+
+        performance_modeling(pattern_adj_mat, best_order, dataset_vertex_size, dataset_edge_size);
+        int *rank;
+        rank = new int[size];
+        for(int i = 0; i < size; ++i) rank[best_order[i]] = i;
+
+        for(int i = 0; i < size; ++i)
+            for(int j = 0; j < size; ++j)
+                adj_mat[INDEX(rank[i], rank[j], size)] = pattern_adj_mat[INDEX(i, j, size)]; 
+        delete[] rank;
+        delete[] best_order;
+    }
+    else {
+        memcpy(adj_mat, pattern.get_adj_mat_ptr(), size * size * sizeof(int));
+    }
 
     // The I-th loop consists of at most the intersection of i-1 VertexSet.
     // So the max number of prefix = 0 + 1 + ... + size-1 = size * (size-1) / 2
@@ -41,12 +63,14 @@ Schedule::Schedule(const Pattern& pattern)
             }
         if (valid == false)
         {
-            printf("Invalid Schedule!");
-            assert(0);
+            printf("Invalid Schedule!\n");
+            is_valid = false;
+            return;
         }
     }
 
     build_loop_invariant();
+
 }
 
 Schedule::~Schedule()
@@ -111,4 +135,284 @@ void Schedule::add_restrict(const std::vector< std::pair<int, int> >& restricts)
         restrict_last[p.second] = total_restrict_num;
         ++total_restrict_num;
     }
+}
+
+// return the number of isomorphism
+int Schedule::aggresive_optimize(const int *adj_mat, std::vector< std::pair<int, int> >& ordered_pairs) const
+{
+    std::vector< std::vector<int> > isomorphism_vec = get_isomorphism_vec(adj_mat);
+    int ret = isomorphism_vec.size();
+
+    std::vector< std::vector< std::vector<int> > > permutation_groups;
+    permutation_groups.clear();
+    for (const std::vector<int>& v : isomorphism_vec)
+        permutation_groups.push_back(calc_permutation_group(v, size));
+
+    ordered_pairs.clear();
+
+    // delete permutation group which contains 1 permutation with 2 elements and some permutation with 1 elements,
+    // and record the corresponding restriction.
+    for (unsigned int i = 0; i < permutation_groups.size(); )
+    {
+        int two_element_number = 0;
+        std::pair<int, int> found_pair;
+        for (const std::vector<int>& v : permutation_groups[i])
+            if (v.size() == 2)
+            {
+                ++two_element_number;
+                found_pair = std::pair<int ,int>(v[0], v[1]);
+            }
+            else if (v.size() != 1)
+            {
+                two_element_number = -1;
+                break;
+            }
+        if (two_element_number == 1)
+        {
+            permutation_groups.erase(permutation_groups.begin() + i);
+            isomorphism_vec.erase(isomorphism_vec.begin() + i);
+            ordered_pairs.push_back(found_pair);
+            assert(found_pair.first < found_pair.second);
+        }
+        else
+            ++i;
+    }
+
+    Pattern base_dag(size);
+    for (const std::pair<int, int>& pair : ordered_pairs)
+        base_dag.add_ordered_edge(pair.first, pair.second);
+
+    bool changed = true;
+    while (changed && isomorphism_vec.size() != 1)
+    {
+        // use restrictions to delete other isomophism
+        for (unsigned int i = 0; i < isomorphism_vec.size(); )
+        {
+            Pattern test_dag(base_dag);
+            const std::vector<int>& iso = isomorphism_vec[i];
+            for (const std::pair<int, int>& pair : ordered_pairs)
+                test_dag.add_ordered_edge(iso[pair.first], iso[pair.second]);
+            if (test_dag.is_dag() == false) // is not dag means conflict
+            {
+                permutation_groups.erase(permutation_groups.begin() + i);
+                isomorphism_vec.erase(isomorphism_vec.begin() + i);
+            }
+            else
+                ++i;
+        }
+
+        changed = false;
+        std::pair<int, int> found_pair;
+        for (unsigned int i = 0; i < permutation_groups.size(); )
+        {
+            int two_element_number = 0;
+            for (const std::vector<int>& v : permutation_groups[i])
+                if (v.size() == 2)
+                {
+                    ++two_element_number;
+                    found_pair = std::pair<int ,int>(v[0], v[1]);
+                    break;
+                }
+            if (two_element_number >= 1)
+            {
+                permutation_groups.erase(permutation_groups.begin() + i);
+                isomorphism_vec.erase(isomorphism_vec.begin() + i);
+                assert(found_pair.first < found_pair.second);
+                ordered_pairs.push_back(found_pair);
+                base_dag.add_ordered_edge(found_pair.first, found_pair.second);
+                changed = true;
+                break;
+            }
+            else
+                ++i;
+        }
+    }
+    assert(isomorphism_vec.size() == 1);
+    return ret;
+}
+
+std::vector< std::vector<int> > Schedule::get_isomorphism_vec(const int *adj_mat) const
+{
+    unsigned int pow = 1;
+    for (int i = 2; i <= size; ++i)
+        pow *= i;
+    std::vector< std::vector<int> > vec;
+    vec.clear();
+    bool use[size];
+    for (int i = 0; i < size; ++i)
+        use[i] = false;
+    std::vector<int> tmp_vec;
+    get_full_permutation(vec, use, tmp_vec, 0);
+    assert(vec.size() == pow);
+    std::vector< std::vector<int> > isomorphism_vec;
+    isomorphism_vec.clear();
+    for (const std::vector<int>& v : vec)
+    {
+        bool flag = true;
+        for (int i = 0; i < size; ++i)
+            for (int j = i + 1; j < size; ++j)
+                if (adj_mat[INDEX(i, j, size)] != 0)
+                    if (adj_mat[INDEX(v[i], v[j], size)] == 0) // not isomorphism
+                    {
+                        flag = false;
+                        break;
+                    }
+        if (flag == true)
+            isomorphism_vec.push_back(v);
+    }
+    return isomorphism_vec;
+}
+
+void Schedule::get_full_permutation(std::vector< std::vector<int> >& vec, bool use[], std::vector<int> tmp_vec, int depth) const
+{
+    if (depth == size)
+    {
+        vec.push_back(tmp_vec);
+        return;
+    }
+    for (int i = 0; i < size; ++i)
+        if (use[i] == false)
+        {
+            use[i] = true;
+            tmp_vec.push_back(i);
+            get_full_permutation(vec, use, tmp_vec, depth + 1);
+            tmp_vec.pop_back();
+            use[i] = false;
+        }
+}
+
+std::vector< std::vector<int> > Schedule::calc_permutation_group(const std::vector<int> vec, int size)
+{
+    bool use[size];
+    for (int i = 0; i < size; ++i)
+        use[i] = false;
+    std::vector< std::vector<int> > res;
+    res.clear();
+    for (unsigned int i = 0; i < vec.size(); ++i)
+        if (use[i] == false)
+        {
+            std::vector<int> tmp_vec;
+            tmp_vec.clear();
+            tmp_vec.push_back(i);
+            use[i] = true;
+            int x = vec[i];
+            while (use[x] == false)
+            {
+                use[x] = true;
+                tmp_vec.push_back(x);
+                x = vec[x];
+            }
+            res.push_back(tmp_vec);
+        }
+    return res;
+}
+
+void Schedule::performance_modeling(const int* adj_mat, int* best_order, int dataset_vertex_size, int dataset_edge_size) {
+    printf("begin performance_modeling\n");
+    double p = 2.0 * dataset_edge_size / dataset_vertex_size / dataset_vertex_size;
+    int magic_number = 0;
+    int* order;
+    int* rank;
+    double* pp;
+
+    order = new int[size];
+    rank = new int[size];
+    pp = new double[size]; 
+
+    pp[0] = 1;
+    for(int i = 1; i < size; ++i) pp[i] = pp[i - 1] * p;
+    for(int i = 0; i < size; ++i) order[i] = i;
+    double min_val;
+    bool have_best = false;
+    std::vector<int> invariant_size[size];
+    do {
+        // check if is valid schedule
+        bool is_valid = true;
+        for(int i = 1; i < size; ++i) {
+            bool have_edge = false;
+            for(int j = 0; j < i; ++j)
+                if( adj_mat[INDEX(order[i], order[j], size)]) {
+                    have_edge = true;
+                    break;
+                }
+            if( have_edge == false) {
+                is_valid = false;
+                break;
+            }
+        }
+        if( is_valid == false ) continue;
+        
+        for(int i = 0; i < size; ++i) rank[order[i]] = i;
+        int* cur_adj_mat;
+        cur_adj_mat = new int[size*size];
+        for(int i = 0; i < size; ++i)
+            for(int j = 0; j < size; ++j)
+                cur_adj_mat[INDEX(rank[i], rank[j], size)] = adj_mat[INDEX(i, j, size)];
+
+        std::vector< std::pair<int,int> > restricts;
+        int multiplicity = aggresive_optimize(cur_adj_mat, restricts);
+        int restricts_size = restricts.size();
+        std::sort(restricts.begin(), restricts.end());
+        double* sum;
+        sum = new double[restricts_size];
+        for(int i = 0; i < restricts_size; ++i) sum[i] = 0;
+        int* tmp;
+        tmp = new int[size];
+        for(int i = 0; i < size; ++i) tmp[i] = i;
+        do {
+            for(int i = 0; i < restricts_size; ++i)
+                if(tmp[restricts[i].first] > tmp[restricts[i].second]) {
+                    sum[i] += 1;
+                }
+                else break;
+        } while( std::next_permutation(tmp, tmp + size));
+        double total = 1;
+        for(int i = 2; i <= size; ++i) total *= i;
+        for(int i = 0; i < restricts_size; ++i)
+            sum[i] = sum[i] /total;
+        for(int i = restricts_size - 1; i > 0; --i)
+            sum[i] /= sum[i - 1];
+
+
+        double val = 1;
+        for(int i = 0; i < size; ++i) invariant_size[i].clear();
+        for(int i = size - 1; i >= 0; --i) {
+            int cnt = 0;
+            for(int j = 0; j < i; ++j)
+                if(cur_adj_mat[INDEX(j, i, size)])
+                    ++cnt;
+            int c = cnt;
+            for(int j = i - 1; j >= 0; --j)
+                if(cur_adj_mat[INDEX(j, i, size)])
+                    invariant_size[j].push_back(cnt--);
+
+            for(int j = 0; j < invariant_size[i].size(); ++j)
+                if(invariant_size[i][j] > 1) 
+                    val += dataset_vertex_size * pp[invariant_size[i][j] - 1] + dataset_vertex_size * p;
+            for(int j = 0; j < restricts_size; ++j)
+                if(restricts[j].second == i)
+                    val *=  sum[j];
+            val *= (magic_number +  dataset_vertex_size * pp[c]);
+        
+        }
+        if( have_best == false || val < min_val) {
+            have_best = true;
+            for(int i = 0; i < size; ++i)
+                best_order[i] = order[i];
+            min_val = val;
+        }
+        
+        for(int i = 0; i < size; ++i)
+            printf("%d ", order[i]);
+        printf("%.6lf\n", val);
+
+        delete[] cur_adj_mat;
+        delete[] sum;
+        delete[] tmp;
+
+    } while( std::next_permutation(order, order + size) );
+
+    delete[] order;
+    delete[] rank;
+    delete[] pp;
 }

@@ -20,9 +20,6 @@ public:
     bool check_connected() const;
     void count_all_isomorphism(std::set< std::set<int> >& s) const;
     void print() const;
-    int aggresive_optimize(std::vector< std::pair<int, int> >& ordered_pairs) const;
-    static std::vector< std::vector<int> > calc_permutation_group(const std::vector<int> vec, int size);
-    std::vector< std::vector<int> > get_isomorphism_vec() const;
     bool is_dag() const;
 private:
     Pattern& operator =(const Pattern&);

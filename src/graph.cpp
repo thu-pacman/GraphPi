@@ -148,10 +148,16 @@ void Graph::pattern_matching_func(const Schedule& schedule, VertexSet* vertex_se
                 continue;
         int l, r;
         get_edge_index(vertex, l, r);
+        bool is_zero = false;
         for (int prefix_id = schedule.get_last(depth); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
         {
             vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], r - l, prefix_id, vertex, clique);
+            if( vertex_set[prefix_id].get_size() == 0) {
+                is_zero = true;
+                break;
+            }
         }
+        if( is_zero ) continue;
         //subtraction_set.insert_ans_sort(vertex);
         subtraction_set.push_back(vertex);
         pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, depth + 1, clique);
@@ -235,10 +241,16 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
             continue;
         int l, r;
         get_edge_index(vertex, l, r);
+        bool is_zero = false;
         for (int prefix_id = schedule.get_last(depth); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
         {
             vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], r - l, prefix_id, vertex);
+            if( vertex_set[prefix_id].get_size() == 0) {
+                is_zero = true;
+                break;
+            }
         }
+        if( is_zero ) continue;
         //subtraction_set.insert_ans_sort(vertex);
         subtraction_set.push_back(vertex);
         pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, depth + 1);
