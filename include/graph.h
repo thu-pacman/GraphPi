@@ -29,6 +29,9 @@ public:
     //multi thread triangle counting
     long long triangle_counting_mt(int thread_count);
 
+    //multi thread triangle counting with mpi
+    long long triangle_counting_mpi(int thread_count);
+
     //general pattern matching algorithm with multi thread
     long long pattern_matching(const Schedule& schedule, int thread_count, bool clique = false);
 private:
