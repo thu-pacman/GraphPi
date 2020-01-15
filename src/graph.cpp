@@ -118,12 +118,13 @@ long long Graph::triangle_counting_mpi(int thread_count) {
 	std::atomic_flag lock[thread_count];
 	std::queue<int> q;
 	const int MAXN = 1 << 22;
-	static int *data[32], qrynode[64], qrydest[64];
+	static int data[24][MAXN], qrynode[64], qrydest[64];
 #pragma omp parallel num_threads(thread_count)
     {
 #pragma omp master
 		{
-			MPI_Init(NULL, NULL);
+			int provided;
+			MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &provided);
 			MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
 			MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 			blocksize = (v_cnt + comm_sz - 1) / comm_sz;
@@ -131,11 +132,11 @@ long long Graph::triangle_counting_mpi(int thread_count) {
 			mynoder = my_rank < comm_sz - 1 ? blocksize * (my_rank + 1) : v_cnt;
 			globalv = mynodel;
 		}
-#pragma omp barrier
+#pragma omp barrier //mynodel have to be calculated before running other threads
 #pragma omp master
 		{
 			const int REQ = 0, ANS = 1, IDLE = 2, END = 3;
-			static int data[24][MAXN], recv[MAXN], send[MAXN];//TODO: frequent communication
+			static int recv[MAXN], send[MAXN];
 			MPI_Request sendrqst, recvrqst;
 			MPI_Status status;
 			MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
@@ -161,7 +162,7 @@ long long Graph::triangle_counting_mpi(int thread_count) {
 							node = q.front();
 							q.pop();
 						}
-						memcpy(data[node], recv + 1, sizeof(data[0]) * (m - 1));
+						memcpy(data[node], recv + 1, sizeof(recv[0]) * (m - 1));
 						data[node][m - 1] = -1;
 						lock[node].clear();
 						waitforans = false;
@@ -193,7 +194,7 @@ long long Graph::triangle_counting_mpi(int thread_count) {
 						send[0] = IDLE;
 						send[1] = node_ans >> 30;
 						send[2] = node_ans & ((1ll << 30) - 1);
-						MPI_Isend(send, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, &sendrqst);
+						MPI_Isend(send, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, &sendrqst);
 					}
 					else {
 						idlenodecnt++;
@@ -204,7 +205,9 @@ long long Graph::triangle_counting_mpi(int thread_count) {
 				if (idlenodecnt == comm_sz) {
 					for (int i = 1; i < comm_sz; i++) {
 						send[0] = END;
-						MPI_Isend(send, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &sendrqst);
+						send[1] = tot_ans >> 30;
+						send[2] = tot_ans & ((1ll << 30) - 1);
+						MPI_Isend(send, 3, MPI_INT, i, 0, MPI_COMM_WORLD, &sendrqst);
 					}
 					break;
 				}
@@ -227,6 +230,10 @@ long long Graph::triangle_counting_mpi(int thread_count) {
 				}
 			}
 			if (breakflag) break;
+			if (v % 100 == 0) {
+				printf("%d\n", v);
+				fflush(stdout);
+			}
 			// for v in G
 			int l, r;
 			get_edge_index(v, l, r);
@@ -238,7 +245,7 @@ long long Graph::triangle_counting_mpi(int thread_count) {
 				}
 				else {
 					int l1, r1;
-					get_edge_index(v1, l1, r1);
+					get_edge_index(v, l1, r1);
 					qrynode[my_thread_num] = v2;
 					qrydest[my_thread_num] = v2 / blocksize;
 #pragma omp critical
@@ -246,13 +253,11 @@ long long Graph::triangle_counting_mpi(int thread_count) {
 						q.push(my_thread_num);
 					}
 					for (;lock[my_thread_num].test_and_set(););
-					int l2, r2;
-					get_edge_index(v2, l2, r2);
-					for (;l1 < r1 && ~data[my_thread_num][l2];) {
+					for (int l2 = 0; l1 < r1 && ~data[my_thread_num][l2];) {
 						if(edge[l1] < data[my_thread_num][l2]) {
 							++l1;
 						}
-						else if(edge[l2] < data[my_thread_num][l1]) {
+						else if(edge[l1] > data[my_thread_num][l2]) {
 							++l2;
 						}
 						else {
