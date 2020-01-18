@@ -8,10 +8,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sys/time.h>
+#include <cstdlib>
 
 TEST(schedule_test, build_loop_invariant)
 {
-    Pattern tc_pattern(3);
+    /*Pattern tc_pattern(3);
     tc_pattern.add_edge(0, 1);
     tc_pattern.add_edge(0, 2);
     tc_pattern.add_edge(1, 2);
@@ -44,13 +46,13 @@ TEST(schedule_test, build_loop_invariant)
     ASSERT_EQ(schedule5.get_loop_set_prefix_id(4), 3);
     ASSERT_EQ(schedule5.get_next(2), 1);
     ASSERT_EQ(schedule5.get_father_prefix_id(3), 2);
-    ASSERT_EQ(schedule5.get_father_prefix_id(2), 0);
+    ASSERT_EQ(schedule5.get_father_prefix_id(2), 0);*///TODO:bx2k
 
 }
 
 TEST(motif_generator_test, motif_generator)
 {
-    MotifGenerator mg0(3);
+    /*MotifGenerator mg0(3);
     std::vector<Pattern> patterns = mg0.generate();
     ASSERT_EQ(patterns.size(), 2);
     for (const Pattern& p : patterns)
@@ -59,23 +61,47 @@ TEST(motif_generator_test, motif_generator)
     }
     MotifGenerator mg1(4);
     patterns = mg1.generate();
-    ASSERT_EQ(patterns.size(), 6);
+    ASSERT_EQ(patterns.size(), 6);*///TODO:bx2k
 }
 
 TEST(aggressive_optimize_test, aggre_ssive_optimize)
 {
+    auto get_wall_time = []() {
+        struct timeval time;
+        if(gettimeofday(&time,NULL)) {
+            return 0.0;
+        }
+        return (double)((double)time.tv_sec + (double)time.tv_usec * 0.000001);
+    };
 
     Graph *g;
     DataLoader D;
     
-    std::string type = "complete8";
-    std::string path = "/home/sth/download/8nodes_complete_graph.txt";
+    std::string type = "Patents";
+    std::string path = "/home/zms/patents_input";
+    
     DataType my_type;
-    my_type = DataType::complete8;
+    if(type == "Patents") my_type = DataType::Patents;
+    else {
+        printf("invalid DataType!\n");
+    }
     
     ASSERT_EQ(D.load_data(g,my_type,path.c_str()),true); 
+    MotifGenerator mg(3);
+    Pattern p = mg.generate()[0];
+    std::vector < std::pair<int, int> > pairs;
+    Schedule schedule(p);
+    int thread_count = 24;
+    p.aggresive_optimize(pairs); // check if the isomorphism_vec size can be deleted to 1 by restriction.("assert(isomorphism_vec.size() == 1);")
+    schedule.add_restrict(pairs);
+    long long ans_aggressive = g->pattern_matching_mpi(schedule, thread_count);
+    double t1 = get_wall_time();
+    ASSERT_EQ(ans_aggressive, 7515023);
+    double t2 = get_wall_time();
+    printf("brute force single thread TC time: %.6lf\n", t2 - t1);
 
-    std::vector<Pattern> patterns;
+
+    /*std::vector<Pattern> patterns;
     for (int i = 3; i <= 7; ++i)//more than 6 will cost too much time
     {
         MotifGenerator mg(i);
@@ -92,7 +118,7 @@ TEST(aggressive_optimize_test, aggre_ssive_optimize)
             ASSERT_EQ(ans_conservative, ans_aggressive * multiplicity);
             ASSERT_NE(ans_conservative, 0);
         }
-    }
+    }*/
 
     /*Pattern p(4);
     p.add_edge(0, 1);
