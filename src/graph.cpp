@@ -167,6 +167,7 @@ void Graph::pattern_matching_func(const Schedule& schedule, VertexSet* vertex_se
 
 long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bool clique)
 {
+    int pattern_size = schedule.get_size(); 
     long long global_ans = 0;
     #pragma omp parallel num_threads(thread_count) reduction(+: global_ans)
     {
@@ -186,6 +187,10 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
             }
             //subtraction_set.insert_ans_sort(vertex);
             subtraction_set.push_back(vertex);
+            long long local_loop_size_cnt[10];
+            long long local_loop_times[10];
+            for(int i = 1; i < pattern_size; ++i)
+                local_loop_size_cnt[i] = local_loop_times[i] = 0;
             if (schedule.get_total_restrict_num() > 0 && clique == false)
                 pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, 1);
             else
@@ -196,6 +201,7 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
 
         // TODO : Computing multiplicty for a pattern
         global_ans += local_ans;
+    
     }
     return global_ans;
 }

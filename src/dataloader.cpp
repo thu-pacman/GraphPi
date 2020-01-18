@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 
-bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int oriented_type) {
+bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int pattern_size, int max_pattern_degree, int pattern_diameter, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info, int oriented_type) {
     if(type == Patents || type == Orkut || type == complete8 || type == LiveJournal) {
         if (freopen(path, "r", stdin) == NULL)
         {
@@ -57,6 +57,22 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int orien
             delete[] new_id;
         }
         std::sort(degree, degree + g->v_cnt);
+
+        // get graph degree info for performancel modeling
+        graph_degree_info.clear();
+        graph_degree_info.push_back(g->v_cnt);
+        graph_degree_info.push_back(g->e_cnt);
+        for(int k = 2; k <= max_pattern_degree; ++k) {
+            long long val = 0;
+            for(int i = 0; i < g->v_cnt; ++i) {
+                val += comb(degree[i],k);
+                if( val < 0 ) printf("too big when get graph info\n");
+            }
+            graph_degree_info.push_back(val);
+        }
+        for(int k = 0; k <= max_pattern_degree; ++k)
+            printf("graph_degree_info %d: %lld\n", k, graph_degree_info[k]);
+
         // The max size of intersections is the second largest degree.
         VertexSet::max_intersection_size = degree[g->v_cnt - 2];
         delete[] degree;
@@ -94,13 +110,62 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int orien
         }
         delete[] e;
         printf("Success! There are %d nodes and %d edges.\n",g->v_cnt,g->e_cnt);
+        fflush(stdout);
         if(g->vertex[g->v_cnt - 1] == -1)
             g->vertex[g->v_cnt - 1] = g->e_cnt;
         g->vertex[g->v_cnt] = g->e_cnt;
         for(int i = g->v_cnt - 2; i >= 0; --i)
             if(g->vertex[i] == -1) {
                 g->vertex[i] = g->vertex[i+1];
+            
             }
+        //get graph size info for performance modeling
+        int* vis = new int[g->v_cnt];
+        for(int i = 0; i < g->v_cnt; ++i) vis[i] = 0;
+        int vis_clock = 0;
+        int* bfs_q = new int[g->v_cnt];
+        int bfs_q_head = 0;
+        int bfs_q_tail = 0;
+        int *dis = new int[g->v_cnt];
+        
+        graph_size_info.clear();
+        graph_size_info.push_back(1);
+        graph_size_info.push_back(g->v_cnt);
+        for(int i = 2; i < pattern_size; ++i)
+            graph_size_info.push_back(0);
+
+        for(int root = 0; root < g->v_cnt; ++root) {
+            int sum = 0;
+
+            vis_clock++;
+            bfs_q_head = bfs_q_tail = 0;
+            
+            bfs_q[bfs_q_tail++] = root;
+            vis[root] = vis_clock;
+            dis[root] = 0;
+            while( bfs_q_head < bfs_q_tail ) {
+                int cur = bfs_q[ bfs_q_head++ ];
+                ++sum;
+                if( dis[cur] == pattern_diameter) continue;
+                for(int i = g->vertex[cur]; i < g->vertex[cur + 1]; ++i)
+                    if( vis[g->edge[i]] != vis_clock) {
+                        vis[g->edge[i]] = vis_clock;
+                        dis[g->edge[i]] = dis[cur] + 1;
+                        bfs_q[bfs_q_tail++] = g->edge[i];
+                    }
+            }
+
+            for(int i = 2; i < pattern_size; ++i) 
+                graph_size_info[i] += comb(sum - 1, i - 1);
+        }
+
+        for(long long i = 2; i < pattern_size; ++i)
+            graph_size_info[i] /= i;
+            
+
+        delete[] vis;
+        delete[] bfs_q;
+        delete[] dis;
         return true;
     }
     printf("invalid DataType!\n");
@@ -117,4 +182,13 @@ bool DataLoader::cmp_degree_gt(std::pair<int,int> a,std::pair<int,int> b) {
 
 bool DataLoader::cmp_degree_lt(std::pair<int,int> a,std::pair<int,int> b) {
     return a.second < b.second;
+}
+
+long long DataLoader::comb(int n, int k) {
+    long long ans = 1;
+    for(int i = n; i > n - k; --i)
+        ans = ans * i;
+    for(int i = 1; i <= k; ++i)
+        ans = ans / k;
+    return ans;
 }

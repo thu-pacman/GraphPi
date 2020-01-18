@@ -11,28 +11,12 @@ if (GTEST_FOUND)
 #                        gomp)
 #    gtest_discover_tests(graph_mining_test)
 
-#    ADD_EXECUTABLE(order_test order_test.cpp)
-#    TARGET_LINK_LIBRARIES(order_test
-#                        ${GTEST_BOTH_LIBRARIES}
-#                        graph_mining
-#                        pthread
-#                        gomp)
-#    gtest_discover_tests(order_test)
-    
-#    ADD_EXECUTABLE(patents_qg5_test patents_qg5_test.cpp)
-#    TARGET_LINK_LIBRARIES(patents_qg5_test
-#                        ${GTEST_BOTH_LIBRARIES}
-#                        graph_mining
-#                        pthread
-#                        gomp)
-#    gtest_discover_tests(patents_qg5_test)
-
-    ADD_EXECUTABLE(performance_test_patents_qg5 performance_test_patents_qg5.cpp)
-    TARGET_LINK_LIBRARIES(performance_test_patents_qg5
+    ADD_EXECUTABLE(p_val_test p_val_test.cpp)
+    TARGET_LINK_LIBRARIES(p_val_test
                         ${GTEST_BOTH_LIBRARIES}
                         graph_mining
                         pthread
                         gomp)
-    gtest_discover_tests(performance_test_patents_qg5)
+    gtest_discover_tests(p_val_test)
 endif()
 

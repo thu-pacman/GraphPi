@@ -2,11 +2,14 @@
 
 #include "pattern.h"
 #include "prefix.h"
+
+#include <vector>
+
 class Schedule
 {
 public:
     //TODO : more kinds of constructors to construct different Schedules from one Pattern
-    Schedule(const Pattern& pattern, bool& is_valid, bool use_performance_modeling, int dataset_vertex_size, int dataset_edge_size);
+    Schedule(const Pattern& pattern, bool& is_valid, bool use_performance_modeling, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info);
     ~Schedule();
     inline int get_total_prefix_num() const { return total_prefix_num;}
     inline int get_father_prefix_id(int prefix_id) const { return father_prefix_id[prefix_id];}
@@ -39,5 +42,5 @@ private:
     void build_loop_invariant();
     int find_father_prefix(int data_size, const int* data);
     void get_full_permutation(std::vector< std::vector<int> >& vec, bool use[], std::vector<int> tmp_vec, int depth) const;
-    void performance_modeling(const int *adj_mat, int* best_order, int dataset_vertex_size, int dataset_edge_size);
+    void performance_modeling(const int *adj_mat, int* best_order, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info);
 };

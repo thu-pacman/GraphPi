@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <algorithm>
 
-Schedule::Schedule(const Pattern& pattern, bool &is_valid, bool use_performance_modeling, int dataset_vertex_size, int dataset_edge_size)
+Schedule::Schedule(const Pattern& pattern, bool &is_valid, bool use_performance_modeling, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info)
 {
     is_valid = true;
     size = pattern.get_size();
@@ -16,7 +16,7 @@ Schedule::Schedule(const Pattern& pattern, bool &is_valid, bool use_performance_
         int *best_order;
         best_order = new int[size];
 
-        performance_modeling(pattern_adj_mat, best_order, dataset_vertex_size, dataset_edge_size);
+        performance_modeling(pattern_adj_mat, best_order, graph_degree_info, graph_size_info);
         int *rank;
         rank = new int[size];
         for(int i = 0; i < size; ++i) rank[best_order[i]] = i;
@@ -63,13 +63,14 @@ Schedule::Schedule(const Pattern& pattern, bool &is_valid, bool use_performance_
             }
         if (valid == false)
         {
-            printf("Invalid Schedule!\n");
+//            printf("Invalid Schedule!\n");
             is_valid = false;
             return;
         }
     }
 
     build_loop_invariant();
+
 
 }
 
@@ -307,20 +308,45 @@ std::vector< std::vector<int> > Schedule::calc_permutation_group(const std::vect
     return res;
 }
 
-void Schedule::performance_modeling(const int* adj_mat, int* best_order, int dataset_vertex_size, int dataset_edge_size) {
+void Schedule::performance_modeling(const int* adj_mat, int* best_order, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info) {
     printf("begin performance_modeling\n");
-    double p = 2.0 * dataset_edge_size / dataset_vertex_size / dataset_vertex_size;
+//    double p = 1e-2;
+//    double np = dataset_edge_size * 2.0 / dataset_vertex_size;
+//    printf("p = %.6lf np = %.6lf\n", p, np);
+    // p = 2.0 * dataset_edge_size / dataset_vertex_size / dataset_vertex_size;
     int magic_number = 0;
     int* order;
     int* rank;
-    double* pp;
+
+    double* p_size;
+    int max_degree = graph_degree_info.size();
+    p_size = new double[max_degree];
+    
+    p_size[0] = graph_degree_info[0];
+    for(int i = 1;i < max_degree; ++i) {
+        long long tmp = 1;
+        long long n = graph_degree_info[0] / 100000;
+        for(long long j = n; j > n - i; --j)
+            tmp *= j;
+        for(long long j = 2; j <= i; ++j)
+            tmp /= j;
+        p_size[i] = graph_degree_info[i] * 1.0 / graph_size_info[i];
+        if( i == 2) {
+            puts("in");
+       //     p_size[i] = graph_degree_info[i] * 1.0 / (7515023 * 3);
+            p_size[i] = 7515023.0 / 16518948 / 2; 
+        }
+        printf("p_size[%d] = %.6lf\n", i, p_size[i]);
+    }
+
+//    double* pp;
 
     order = new int[size];
     rank = new int[size];
-    pp = new double[size]; 
+//    pp = new double[size]; 
 
-    pp[0] = 1;
-    for(int i = 1; i < size; ++i) pp[i] = pp[i - 1] * p;
+ //   pp[0] = 1;
+ //   for(int i = 1; i < size; ++i) pp[i] = pp[i - 1] * p;
     for(int i = 0; i < size; ++i) order[i] = i;
     double min_val;
     bool have_best = false;
@@ -373,26 +399,33 @@ void Schedule::performance_modeling(const int* adj_mat, int* best_order, int dat
         for(int i = restricts_size - 1; i > 0; --i)
             sum[i] /= sum[i - 1];
 
-
         double val = 1;
         for(int i = 0; i < size; ++i) invariant_size[i].clear();
         for(int i = size - 1; i >= 0; --i) {
-            int cnt = 0;
+            int cnt_forward = 0;
+            int cnt_backward = 0;
             for(int j = 0; j < i; ++j)
                 if(cur_adj_mat[INDEX(j, i, size)])
-                    ++cnt;
-            int c = cnt;
+                    ++cnt_forward;
+            for(int j = i + 1; j < size; ++j)
+                if(cur_adj_mat[INDEX(j, i, size)])
+                    ++cnt_backward;
+
+            int c = cnt_forward;
             for(int j = i - 1; j >= 0; --j)
                 if(cur_adj_mat[INDEX(j, i, size)])
-                    invariant_size[j].push_back(cnt--);
+                    invariant_size[j].push_back(c--);
 
             for(int j = 0; j < invariant_size[i].size(); ++j)
                 if(invariant_size[i][j] > 1) 
-                    val += dataset_vertex_size * pp[invariant_size[i][j] - 1] + dataset_vertex_size * p;
+                    val += p_size[invariant_size[i][j] - 1] + p_size[1];
+//                    val += np * pp[invariant_size[i][j] - 2] + np;
             for(int j = 0; j < restricts_size; ++j)
                 if(restricts[j].second == i)
                     val *=  sum[j];
-            val *= (magic_number +  dataset_vertex_size * pp[c]);
+            val *= p_size[cnt_forward];
+//            if( i == 0) val *= dataset_vertex_size;
+//            else val *= (magic_number + np * pp[cnt_forward - 1]);
         
         }
         if( have_best == false || val < min_val) {
@@ -414,5 +447,6 @@ void Schedule::performance_modeling(const int* adj_mat, int* best_order, int dat
 
     delete[] order;
     delete[] rank;
-    delete[] pp;
+    delete[] p_size;
+//    delete[] pp;
 }
