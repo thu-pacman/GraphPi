@@ -138,7 +138,7 @@ void Graph::tc_mt(long long *global_ans) {
 }
 
 long long Graph::triangle_counting_mpi(int thread_count) {
-    int mynodel, mynoder;
+    /*int mynodel, mynoder;
     long long tot_ans;
     Graphmpi &gm = Graphmpi::getinstance();
 #pragma omp parallel num_threads(thread_count)
@@ -165,9 +165,10 @@ long long Graph::triangle_counting_mpi(int thread_count) {
                 thread_ans += intersection_size_mpi(v, edge[v1]);
             }
         }
-        gm.idle(thread_ans);
+        //gm.idle(thread_ans); 
     }
-    return tot_ans / 6ll;
+    return tot_ans / 6ll;*/
+    return -1;
 }
 
 void Graph::get_edge_index(int v, int& l, int& r) const
@@ -263,6 +264,7 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
     int loop_size = vertex_set[loop_set_prefix_id].get_size();
     if (loop_size <= 0)
         return;
+
     int* loop_data_ptr = vertex_set[loop_set_prefix_id].get_data_ptr();
     if (depth == schedule.get_size() - 1)
     {
@@ -313,45 +315,53 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
 {
     Graphmpi &gm = Graphmpi::getinstance();
     long long global_ans = 0;
-    int mynodel, mynoder;
 #pragma omp parallel num_threads(thread_count)
     {
 #pragma omp master
         {
-            auto k = gm.init(thread_count, this);
-            mynodel = k.first;
-            mynoder = k.second;
+            gm.init(thread_count, this);
         }
 #pragma omp barrier //mynodel have to be calculated before running other threads
 #pragma omp master
         {
             global_ans = gm.runmajor();
         }
-        VertexSet* vertex_set = new VertexSet[schedule.get_total_prefix_num()];
-        VertexSet subtraction_set;
-        subtraction_set.init();
-        long long local_ans = 0;
-        // TODO : try different chunksize
-#pragma omp for schedule(dynamic) nowait
-        for (int vertex = mynodel; vertex < mynoder; vertex++)
-        {
-            int l, r;
-            get_edge_index(vertex, l, r);
-            for (int prefix_id = schedule.get_last(0); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
+        if (omp_get_thread_num()) {
+            VertexSet* vertex_set = new VertexSet[schedule.get_total_prefix_num()];
+            long long local_ans = 0;
+            // TODO : try different chunksize
+            for (int vertex, *data, size; gm.get_startvertex(vertex, data, size, local_ans);)
             {
-                vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], r - l, prefix_id);
+                if (!data) {
+                    int l, r;
+                    get_edge_index(vertex, l, r);
+                    local_ans += pattern_matching_mpi_vertex(schedule, vertex, vertex_set, edge + l, r - l);
+                }
+                else
+                    local_ans += pattern_matching_mpi_vertex(schedule, vertex, vertex_set, data, size);
             }
-            //subtraction_set.insert_ans_sort(vertex);
-            subtraction_set.push_back(vertex);
-            pattern_matching_aggressive_func_mpi(schedule, vertex_set, subtraction_set, local_ans, 1);
-            subtraction_set.pop_back();
+            delete[] vertex_set;
         }
-        delete[] vertex_set;
+    }
 
         // TODO : Computing multiplicty for a pattern
-        gm.idle(local_ans);
-    }
+    
     return global_ans;
+}
+
+long long Graph::pattern_matching_mpi_vertex(const Schedule& schedule, int vertex, VertexSet* vertex_set, int data[], int size) {
+    long long ans = 0;
+    VertexSet subtraction_set;
+    subtraction_set.init();
+    for (int prefix_id = schedule.get_last(0); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
+    {
+        vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, data, size, prefix_id);
+    }
+    //subtraction_set.insert_ans_sort(vertex);
+    subtraction_set.push_back(vertex);
+    pattern_matching_aggressive_func_mpi(schedule, vertex_set, subtraction_set, ans, 1);
+    subtraction_set.pop_back();
+    return ans;
 }
 
 void Graph::pattern_matching_aggressive_func_mpi(const Schedule& schedule, VertexSet* vertex_set, VertexSet& subtraction_set, long long& local_ans, int depth)
@@ -395,14 +405,14 @@ void Graph::pattern_matching_aggressive_func_mpi(const Schedule& schedule, Verte
             continue;
         int *data, size;
         Graphmpi &gm = Graphmpi::getinstance();
-        if (gm.include(vertex)) {
+        //if (gm.include(vertex)) {
+        if (true) {
             int l, r;
             get_edge_index(vertex, l, r);
             data = edge + l;
             size = r - l;
         }
         else {
-            int my_thread_num = omp_get_thread_num();
             data = gm.getneighbor(vertex);
             size = gm.getdegree();
         }

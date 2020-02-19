@@ -79,6 +79,7 @@ TEST(aggressive_optimize_test, aggre_ssive_optimize)
     
     std::string type = "Patents";
     std::string path = "/home/zms/patents_input";
+    //std::string path = "/home/xuyi/input/4.in";
     
     DataType my_type;
     if(type == "Patents") my_type = DataType::Patents;
@@ -88,17 +89,32 @@ TEST(aggressive_optimize_test, aggre_ssive_optimize)
     
     ASSERT_EQ(D.load_data(g,my_type,path.c_str()),true); 
     MotifGenerator mg(3);
-    Pattern p = mg.generate()[0];
+    /*Pattern p(6);
+    p.add_edge(0, 1);
+    p.add_edge(0, 2);
+    p.add_edge(0, 3);
+    p.add_edge(0, 5);
+    p.add_edge(1, 2);
+    p.add_edge(1, 3);
+    p.add_edge(1, 4);
+    p.add_edge(2, 4);
+    p.add_edge(2, 5);*/
+    Pattern p(3);
+    p.add_edge(0, 1);
+    p.add_edge(0, 2);
+    p.add_edge(1, 2);
     std::vector < std::pair<int, int> > pairs;
     Schedule schedule(p);
     int thread_count = 24;
     p.aggresive_optimize(pairs); // check if the isomorphism_vec size can be deleted to 1 by restriction.("assert(isomorphism_vec.size() == 1);")
     schedule.add_restrict(pairs);
-    long long ans_aggressive = g->pattern_matching_mpi(schedule, thread_count);
     double t1 = get_wall_time();
+    long long ans_aggressive = g->pattern_matching_mpi(schedule, thread_count);
+    //ASSERT_EQ(ans_aggressive, 19186236035);
     ASSERT_EQ(ans_aggressive, 7515023);
     double t2 = get_wall_time();
     printf("brute force single thread TC time: %.6lf\n", t2 - t1);
+    fflush(stdout);
 
 
     /*std::vector<Pattern> patterns;
