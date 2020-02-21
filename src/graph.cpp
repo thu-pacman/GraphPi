@@ -244,7 +244,8 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
             }
             //subtraction_set.insert_ans_sort(vertex);
             subtraction_set.push_back(vertex);
-            if (schedule.get_total_restrict_num() > 0 && clique == false)
+            //if (schedule.get_total_restrict_num() > 0 && clique == false)
+            if(true)
                 pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, 1);
             else
                 pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, 1, clique);
@@ -311,6 +312,17 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
     }
 }
 
+int testv = 0;
+std::atomic_flag testlock;
+void testinit() {testlock.clear();}
+int gettest() {
+    for (;testlock.test_and_set(););
+    testv++;
+    testlock.clear();
+    return testv;
+}
+
+
 long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count, bool clique)
 {
     Graphmpi &gm = Graphmpi::getinstance();
@@ -322,44 +334,66 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
             gm.init(thread_count, this);
         }
 #pragma omp barrier //mynodel have to be calculated before running other threads
-#pragma omp master
-        {
-            global_ans = gm.runmajor();
-        }
-        if (omp_get_thread_num()) {
             VertexSet* vertex_set = new VertexSet[schedule.get_total_prefix_num()];
             long long local_ans = 0;
-            // TODO : try different chunksize
-            for (int vertex, *data, size; gm.get_startvertex(vertex, data, size, local_ans);)
+            VertexSet subtraction_set;
+            subtraction_set.init();
+/*#pragma omp master
+        {
+            global_ans = gm.runmajor();
+        }*/
+        /*if (omp_get_thread_num()) {
+#pragma omp for schedule(dynamic) nowait
+            for (int vertex = 0; vertex < v_cnt; ++vertex)
+            //for (int vertex;;)
             {
-                if (!data) {
-                    int l, r;
-                    get_edge_index(vertex, l, r);
-                    local_ans += pattern_matching_mpi_vertex(schedule, vertex, vertex_set, edge + l, r - l);
-                }
-                else
-                    local_ans += pattern_matching_mpi_vertex(schedule, vertex, vertex_set, data, size);
+                //if ((vertex = gm.get_startvertex()) == -1) break;
+                int l, r;
+                get_edge_index(vertex, l, r);
+                local_ans += pattern_matching_mpi_vertex(schedule, vertex, vertex_set, edge + l, r - l);
             }
             delete[] vertex_set;
+#pragma omp atomic
+            global_ans += local_ans;
+        }*/
+#pragma omp for schedule(dynamic)
+        for (int vertex = 0; vertex < v_cnt; ++vertex)
+        //for (int vertex;;)
+        {
+            //if ((vertex = gm.get_startvertex()) == -1) break;
+            gm.get_startvertex();
+            //testinit();
+            //gettest();
+            int l, r;
+            get_edge_index(vertex, l, r);
+            for (int prefix_id = schedule.get_last(0); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
+            {
+                vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], r - l, prefix_id);
+            }
+            subtraction_set.push_back(vertex);
+            pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, 1);
+            subtraction_set.pop_back();
         }
+        delete[] vertex_set;
+        //gm.report(local_ans);
+#pragma omp atomic
+        global_ans += local_ans;
     }
-
-        // TODO : Computing multiplicty for a pattern
-    
+    //gm.end();
     return global_ans;
 }
 
 long long Graph::pattern_matching_mpi_vertex(const Schedule& schedule, int vertex, VertexSet* vertex_set, int data[], int size) {
-    long long ans = 0;
     VertexSet subtraction_set;
     subtraction_set.init();
+    long long ans = 0;
     for (int prefix_id = schedule.get_last(0); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
     {
         vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, data, size, prefix_id);
     }
     //subtraction_set.insert_ans_sort(vertex);
     subtraction_set.push_back(vertex);
-    pattern_matching_aggressive_func_mpi(schedule, vertex_set, subtraction_set, ans, 1);
+    pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, ans, 1);
     subtraction_set.pop_back();
     return ans;
 }

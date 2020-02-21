@@ -6,7 +6,6 @@
 #include <cstdio>
 
 int Graphmpi::data[][Graphmpi::MAXN] = {}, Graphmpi::qrynode[] = {}, Graphmpi::qrydest[] = {}, Graphmpi::length[] = {};
-double starttime;
 
 Graphmpi& Graphmpi::getinstance() {
     static Graphmpi gm;
@@ -14,39 +13,39 @@ Graphmpi& Graphmpi::getinstance() {
 }
 
 std::pair<int, int> Graphmpi::init(int _threadcnt, Graph* _graph) {
-    starttime = get_wall_time();
     threadcnt = _threadcnt;
     graph = _graph;
     int provided;
     MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &provided);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Barrier(MPI_COMM_WORLD);
+    starttime = get_wall_time();
     blocksize = (graph->v_cnt + comm_sz - 1) / comm_sz;
     int k = comm_sz - my_rank - 1;
     global_vertex = mynodel = blocksize * k;
     mynoder = k < comm_sz - 1 ? blocksize * (k + 1) : graph->v_cnt;
     idlethreadcnt = 0;
     for (int i = 0; i < MAXTHREAD; i++) lock[i].test_and_set();
+    global_vertex_lock.clear();
     return std::make_pair(mynodel, mynoder);
 }
 
 int Graphmpi::runmajor() {
     long long tot_ans = 0;
-    const int REQ = 0, ANS = 1, IDLE = 2, END = 3, OVERWORK = 4, SERVER = 0;
+    const int /*REQ = 0, ANS = 1, */IDLE = 2, END = 3, OVERWORK = 4, REPORT = 5, SERVER = 0;
     static int recv[MAXN * MAXTHREAD], send[MAXN * MAXTHREAD];
     MPI_Request sendrqst, recvrqst;
     MPI_Status status;
     MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
     int idlenodecnt = 0;
-    bool waitforans = false, idleflag[MAXTHREAD];
-    memset(idleflag, false, sizeof(idleflag));
     for (;;) {
         int testflag = 0;
         MPI_Test(&recvrqst, &testflag, &status);
         if (testflag) {
             int m;
             MPI_Get_count(&status, MPI_INT, &m);
-            if (recv[0] == REQ) {
+            /*if (recv[0] == REQ) {
                 int l, r;
                 graph->get_edge_index(recv[1], l, r);
                 //MPI_Wait(&sendrqst, &status);
@@ -67,35 +66,17 @@ int Graphmpi::runmajor() {
                 lock[node].clear();
                 waitforans = false;
             }
-            else if (recv[0] == IDLE) {
-                tot_ans += ((long long)(recv[1]) << 32) | recv[2];
-                bool overworkflag = false;
-                int tmpvertex;
-#pragma omp critical
-                if (global_vertex + threadcnt - 1 < mynoder) {
-                    overworkflag = true;
-                    global_vertex += threadcnt - 1;
-                    tmpvertex = global_vertex;
-                }
-                if (overworkflag) {
-                    send[0] = OVERWORK;
-                    int j = 1;
-                    for (int i = 1; i < threadcnt; i++) {
-                        /*int l, r;
-                        graph->get_edge_index(global_vertex - i, l, r);
-                        send[j] = global_vertex - i;
-                        send[j + 1] = r - l;
-                        memcpy(send + j + 2, graph->edge + l, sizeof(send[0]) * (r - l));
-                        j += r - l + 2;*/
-                        send[j] = tmpvertex - i;
-                        j++;
-                    }
-                    MPI_Isend(send, j, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD, &sendrqst);
-                }
-                else {
-                    idlenodecnt += !idleflag[status.MPI_SOURCE];
-                    idleflag[status.MPI_SOURCE] = true;
-                }
+            else */if (recv[0] == IDLE) {
+                /*for (;global_vertex_lock.test_and_set(););
+                bool overworkflag = global_vertex < mynoder;
+                int tmpvertex = global_vertex;
+                if (overworkflag) global_vertex++;
+                global_vertex_lock.clear();*/
+                send[0] = OVERWORK;
+                send[1] = recv[1];
+                //send[2] = overworkflag ? tmpvertex : -1;
+                send[2] = -1;
+                MPI_Isend(send, 3, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD, &sendrqst);
             }
             else if (recv[0] == END) {
                 tot_ans = (((long long)(recv[1]) << 32) | recv[2]);
@@ -106,20 +87,16 @@ int Graphmpi::runmajor() {
                 break;
             }
             else if (recv[0] == OVERWORK) {
-                //int j = 1;
-                for (int i = 1; i < threadcnt; i++) {
-                    /*vertex[i] = recv[j];
-                    length[i] = recv[j + 1];
-                    memcpy(data[i], recv + j + 2, sizeof(recv[0]) * recv[j + 1]);
-                    lock[i].clear();
-                    j += recv[j + 1] + 2;*/
-                    vertex[i] = recv[i];
-                    lock[i].clear();
-                }
+                vertex[recv[1]] = recv[2];
+                lock[recv[1]].clear();
+            }
+            else if (recv[0] == REPORT) {
+                tot_ans += (((long long)(recv[1]) << 32) | recv[2]);
+                idlenodecnt++;
             }
             MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
         }
-        if (!waitforans && !requestq.empty()) {
+        /*if (!waitforans && !requestq.empty()) {
             int node;
 #pragma omp critical
             {
@@ -130,25 +107,34 @@ int Graphmpi::runmajor() {
             send[1] = qrynode[node];
             MPI_Isend(send, 2, MPI_INT, qrydest[node], SERVER, MPI_COMM_WORLD, &sendrqst);
             waitforans = true;
-        }
-        bool tmpflag;
+        }*/
+        bool idleflag;
+        int tmpthread;
 #pragma omp critical
-        tmpflag = (idlethreadcnt == threadcnt - 1);
-        if (tmpflag) {
-            idlethreadcnt = 0;
-            idlenodecnt += !idleflag[0];
-            idleflag[0] = true;
+        {
+            idleflag = !idleq.empty();
+            if (idleflag) {
+                tmpthread = idleq.front();
+                idleq.pop();
+            }
+        }
+        if (idleflag) {
+            send[0] = IDLE;
+            send[1] = tmpthread;
+            MPI_Isend(send, 2, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
+        }
+        if (idlethreadcnt == threadcnt - 1) {
+            idlethreadcnt = -1;
             if (my_rank) {
                 //MPI_Wait(&sendrqst, &status);
-                send[0] = IDLE;
+                send[0] = REPORT;
                 send[1] = node_ans >> 32;
-                send[2] = node_ans & ((1ll << 32) - 1ll);
-                node_ans = 0;
+                send[2] = node_ans;
                 MPI_Isend(send, 3, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
             }
             else {
+                idlenodecnt++;
                 tot_ans += node_ans;
-                node_ans = 0;
             }
         }
         if (idlenodecnt == comm_sz) {
@@ -156,7 +142,7 @@ int Graphmpi::runmajor() {
                 //MPI_Wait(&sendrqst, &status);
                 send[0] = END;
                 send[1] = tot_ans >> 32;
-                send[2] = tot_ans & ((1ll << 32) - 1ll);
+                send[2] = tot_ans;
                 MPI_Isend(send, 3, MPI_INT, i, SERVER, MPI_COMM_WORLD, &sendrqst);
             }
             break;
@@ -166,14 +152,13 @@ int Graphmpi::runmajor() {
 }
 
 int* Graphmpi::getneighbor(int u) {
-    qrynode[omp_get_thread_num()] = u;
-    qrydest[omp_get_thread_num()] = comm_sz - 1 - (u / blocksize);
+    int thread_num = omp_get_thread_num();
+    qrynode[thread_num] = u;
+    qrydest[thread_num] = comm_sz - 1 - (u / blocksize);
 #pragma omp critical
-    {
-        requestq.push(omp_get_thread_num());
-    }
-    for (;lock[omp_get_thread_num()].test_and_set(););
-    return data[omp_get_thread_num()];
+    requestq.push(thread_num);
+    for (;lock[thread_num].test_and_set(););
+    return data[thread_num];
 }
 
 int Graphmpi::getdegree() {
@@ -190,26 +175,32 @@ Graphmpi::~Graphmpi() {
     MPI_Finalize();
 }
 
-bool Graphmpi::get_startvertex(int &_vertex, int *&_data, int &size, long long &local_ans) {
-    bool returnflag = false;
+int Graphmpi::get_startvertex() {
+    for (;global_vertex_lock.test_and_set(););
+    global_vertex++;
+    global_vertex_lock.clear();
+    return global_vertex;
+    /*for (;global_vertex_lock.test_and_set(););
+    bool returnflag = global_vertex < mynoder;
+    int tmpvertex = global_vertex;
+    if (returnflag) global_vertex++;
+    global_vertex_lock.clear();
+    if (returnflag) return tmpvertex;
+    return -1;
+    int thread_num = omp_get_thread_num();
 #pragma omp critical
-    if (global_vertex < mynoder) {
-        _vertex = global_vertex;
-        _data = nullptr;
-        global_vertex++;
-        returnflag = true;
-    }
-    if (returnflag) return true;
+    idleq.push(thread_num);
+    for (;lock[thread_num].test_and_set(););
+    return vertex[thread_num];*/
+}
+
+void Graphmpi::report(long long local_ans) {
 #pragma omp atomic
     node_ans += local_ans;
 #pragma omp atomic
     idlethreadcnt++;
-    local_ans = 0;
-    if (!my_rank) return false;
-    for (;lock[omp_get_thread_num()].test_and_set(););
-    _vertex = vertex[omp_get_thread_num()];
-    //_data = data[omp_get_thread_num()];
-    _data = nullptr;
-    size = length[omp_get_thread_num()];
-    return ~size ? true : false;
+}
+
+void Graphmpi::end() {
+    printf("node = %d, time = %f\n", my_rank, get_wall_time() - starttime);
 }
