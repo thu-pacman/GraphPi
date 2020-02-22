@@ -1,4 +1,3 @@
-#pragma once
 #include "common.h"
 #include <sys/time.h>
 #include <cstdlib>

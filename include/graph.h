@@ -50,6 +50,4 @@ private:
     void pattern_matching_aggressive_func(const Schedule& schedule, VertexSet* vertex_set, VertexSet& subtraction_set, long long& local_ans, int depth);
 
     void pattern_matching_aggressive_func_mpi(const Schedule& schedule, VertexSet* vertex_set, VertexSet& subtraction_set, long long& local_ans, int depth);
-
-    long long pattern_matching_mpi_vertex(const Schedule& schedule, int vertex, VertexSet* vertex_set, int data[], int size);
 };

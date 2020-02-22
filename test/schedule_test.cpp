@@ -78,7 +78,7 @@ TEST(aggressive_optimize_test, aggre_ssive_optimize)
     DataLoader D;
     
     std::string type = "Patents";
-    std::string path = "/home/zms/patents_input";
+    std::string path = "/home/zms/orkut_input";
     //std::string path = "/home/xuyi/input/4.in";
     
     DataType my_type;
@@ -99,31 +99,39 @@ TEST(aggressive_optimize_test, aggre_ssive_optimize)
     p.add_edge(1, 4);
     p.add_edge(2, 4);
     p.add_edge(2, 5);*/
-    Pattern p(3);
+    Pattern p(4);
     p.add_edge(0, 1);
     p.add_edge(0, 2);
     p.add_edge(1, 2);
+    p.add_edge(1, 3);
+    p.add_edge(2, 3);
+    /*p.add_edge(2, 3);
+    p.add_edge(3, 4);
+    p.add_edge(4, 1);*/
     std::vector < std::pair<int, int> > pairs;
     Schedule schedule(p);
     int thread_count = 24;
     p.aggresive_optimize(pairs); // check if the isomorphism_vec size can be deleted to 1 by restriction.("assert(isomorphism_vec.size() == 1);")
     schedule.add_restrict(pairs);
-    {
+    /*{
         double t1 = get_wall_time();
         //long long ans_aggressive = g->pattern_matching_mpi(schedule, thread_count);
         long long ans_aggressive = g->pattern_matching(schedule, thread_count);
         //ASSERT_EQ(ans_aggressive, 19186236035);
-        ASSERT_EQ(ans_aggressive, 7515023);
+        //ASSERT_EQ(ans_aggressive, 7515023);
+        //ASSERT_EQ(ans_aggressive, 627584181);
+        //ASSERT_EQ(ans_aggressive, 67098889426);
         double t2 = get_wall_time();
-        printf("single node TC time: %.6lf\n", t2 - t1);
+        printf("single node TC time: %.6lf, ans = %lld, expected = 67098889426\n", t2 - t1, ans_aggressive);
         fflush(stdout);
-    }
+    }*/
     {
         double t1 = get_wall_time();
         //long long ans_aggressive = g->pattern_matching_mpi(schedule, thread_count);
         long long ans_aggressive = g->pattern_matching_mpi(schedule, thread_count);
         //ASSERT_EQ(ans_aggressive, 19186236035);
-        ASSERT_EQ(ans_aggressive, 7515023);
+        //ASSERT_EQ(ans_aggressive, 7515023);
+        ASSERT_EQ(ans_aggressive, 627584181);
         double t2 = get_wall_time();
         printf("multi node TC time: %.6lf\n", t2 - t1);
         fflush(stdout);
