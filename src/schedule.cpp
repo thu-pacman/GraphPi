@@ -4,12 +4,16 @@
 #include <assert.h>
 #include <algorithm>
 
-Schedule::Schedule(const Pattern& pattern, bool &is_valid, bool use_performance_modeling, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info)
+Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, bool use_performance_modeling, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info)
 {
-    is_valid = true;
+    is_pattern_valid = true;
     size = pattern.get_size();
     adj_mat = new int[size * size];
 
+    //Initialize adj_mat
+    //If we use performance_modeling, we may change the order of vertex,
+    //the best order produced by performance_modeling(...) is saved in best_order[]
+    //Finally, we use best_order[] to relocate adj_mat
     if( use_performance_modeling) {
 
         const int* pattern_adj_mat = pattern.get_adj_mat_ptr();
@@ -28,6 +32,7 @@ Schedule::Schedule(const Pattern& pattern, bool &is_valid, bool use_performance_
         delete[] best_order;
     }
     else {
+        // not use performance_modeling, simply copy the adj_mat from pattern
         memcpy(adj_mat, pattern.get_adj_mat_ptr(), size * size * sizeof(int));
     }
 
@@ -50,7 +55,8 @@ Schedule::Schedule(const Pattern& pattern, bool &is_valid, bool use_performance_
 
     total_prefix_num = 0;
     total_restrict_num = 0;
-
+    in_exclusion_optimize_num = 0;
+    
     // The I-th vertex must connect with at least one vertex from 0 to i-1.
     for (int i = 1; i < size; ++i)
     {
@@ -63,15 +69,13 @@ Schedule::Schedule(const Pattern& pattern, bool &is_valid, bool use_performance_
             }
         if (valid == false)
         {
-//            printf("Invalid Schedule!\n");
-            is_valid = false;
+            //Invalid Schedule
+            is_pattern_valid = false;
             return;
         }
     }
 
     build_loop_invariant();
-
-
 }
 
 Schedule::~Schedule()
@@ -139,7 +143,7 @@ void Schedule::add_restrict(const std::vector< std::pair<int, int> >& restricts)
 }
 
 // return the number of isomorphism
-int Schedule::aggresive_optimize(const int *adj_mat, std::vector< std::pair<int, int> >& ordered_pairs) const
+int Schedule::aggressive_optimize(const int *adj_mat, std::vector< std::pair<int, int> >& ordered_pairs) const
 {
     std::vector< std::vector<int> > isomorphism_vec = get_isomorphism_vec(adj_mat);
     int ret = isomorphism_vec.size();
@@ -210,7 +214,7 @@ int Schedule::aggresive_optimize(const int *adj_mat, std::vector< std::pair<int,
             for (const std::vector<int>& v : permutation_groups[i])
                 if (v.size() == 2)
                 {
-                    ++two_element_number;
+                   ++two_element_number;
                     found_pair = std::pair<int ,int>(v[0], v[1]);
                     break;
                 }
@@ -231,6 +235,194 @@ int Schedule::aggresive_optimize(const int *adj_mat, std::vector< std::pair<int,
     assert(isomorphism_vec.size() == 1);
     return ret;
 }
+
+// return the number of isomorphism
+// Schedule::aggressive_optimize(...) can only get one valid restrictions
+// but in this func, we try our best to find more restrictions
+// WARNING: the restrictions in ordered_pairs_vector may NOT CORRECT
+int Schedule::aggressive_optimize_get_all_pairs(const int *adj_mat, std::vector< std::vector< std::pair<int, int> > >& ordered_pairs_vector) 
+{
+    std::vector< std::vector<int> > isomorphism_vec = get_isomorphism_vec(adj_mat);
+    int ret = isomorphism_vec.size();
+
+    std::vector< std::vector< std::vector<int> > > permutation_groups;
+    permutation_groups.clear();
+    for (const std::vector<int>& v : isomorphism_vec)
+        permutation_groups.push_back(calc_permutation_group(v, size));
+
+    ordered_pairs_vector.clear();
+
+    std::vector< std::pair<int,int> > ordered_pairs;
+    ordered_pairs.clear();
+
+    // delete permutation group which contains 1 permutation with 2 elements and some permutation with 1 elements,
+    // and record the corresponding restriction.
+    for (unsigned int i = 0; i < permutation_groups.size(); )
+    {
+        int two_element_number = 0;
+        std::pair<int, int> found_pair;
+        for (const std::vector<int>& v : permutation_groups[i])
+            if (v.size() == 2)
+            {
+                ++two_element_number;
+                found_pair = std::pair<int ,int>(v[0], v[1]);
+            }
+            else if (v.size() != 1)
+            {
+                two_element_number = -1;
+                break;
+            }
+        if (two_element_number == 1)
+        {
+            permutation_groups.erase(permutation_groups.begin() + i);
+            isomorphism_vec.erase(isomorphism_vec.begin() + i);
+            ordered_pairs.push_back(found_pair);
+            assert(found_pair.first < found_pair.second);
+        }
+        else
+            ++i;
+    }
+
+    Pattern base_dag(size);
+    for (const std::pair<int, int>& pair : ordered_pairs)
+        base_dag.add_ordered_edge(pair.first, pair.second);
+
+    aggressive_optimize_dfs(base_dag, isomorphism_vec, permutation_groups, ordered_pairs, ordered_pairs_vector);
+
+    return ret;
+}
+void Schedule::aggressive_optimize_dfs(Pattern base_dag, std::vector< std::vector<int> > isomorphism_vec, std::vector< std::vector< std::vector<int> > > permutation_groups, std::vector< std::pair<int,int> > ordered_pairs, std::vector< std::vector< std::pair<int,int> > >& ordered_pairs_vector) {
+    if(isomorphism_vec.size() == 1) {
+        ordered_pairs_vector.push_back(ordered_pairs);
+        return;
+    }
+
+    for (unsigned int i = 0; i < isomorphism_vec.size(); )
+    {
+        Pattern test_dag(base_dag);
+        const std::vector<int>& iso = isomorphism_vec[i];
+        for (const std::pair<int, int>& pair : ordered_pairs)
+            test_dag.add_ordered_edge(iso[pair.first], iso[pair.second]);
+        if (test_dag.is_dag() == false) // is not dag means conflict
+        {
+            permutation_groups.erase(permutation_groups.begin() + i);
+            isomorphism_vec.erase(isomorphism_vec.begin() + i);
+        }
+        else
+            ++i;
+    }
+
+    std::pair<int, int> found_pair;
+    for (unsigned int i = 0; i < permutation_groups.size(); )
+    {
+        int two_element_number = 0;
+        for (const std::vector<int>& v : permutation_groups[i])
+            if (v.size() == 2)
+            {
+                ++two_element_number;
+                found_pair = std::pair<int ,int>(v[0], v[1]);
+                std::vector< std::vector< std::vector<int> > > next_permutation_groups = permutation_groups;
+                std::vector< std::vector<int> > next_isomorphism_vec = isomorphism_vec;
+                std::vector< std::pair<int,int> > next_ordered_pairs = ordered_pairs;
+                Pattern next_base_dag = base_dag;
+                
+                next_permutation_groups.erase(next_permutation_groups.begin() + i);
+                next_isomorphism_vec.erase(next_isomorphism_vec.begin() + i);
+                assert(found_pair.first < found_pair.second);
+                next_ordered_pairs.push_back(found_pair);
+                next_base_dag.add_ordered_edge(found_pair.first, found_pair.second);
+                
+                aggressive_optimize_dfs(next_base_dag, next_isomorphism_vec, next_permutation_groups, next_ordered_pairs, ordered_pairs_vector);
+            }
+        if( two_element_number >= 1) {
+            break;
+        }
+        else {
+            ++i;
+        }
+    }
+
+}
+
+//-----GraphZero's algorithm for restriction generation
+int Schedule::GraphZero_aggressive_optimize(const int *adj_mat, std::vector< std::pair<int, int> >& ordered_pairs) const { 
+    std::vector< std::vector<int> > Aut;
+    GraphZero_get_automorphisms(adj_mat, Aut);
+    int multiplicity = Aut.size();
+
+    std::vector< std::pair<int,int> > L;
+    L.clear();
+
+    for(int v = 0; v < size; ++v) { // iterate all elements in schedule
+        std::vector< std::vector<int> > stabilized_aut;
+        stabilized_aut.clear();
+
+        for(int i = 0; i < Aut.size(); ++i) {
+            std::vector<int>& x = Aut[i];
+            if( x[v] == v) {
+                stabilized_aut.push_back(x);
+            }
+            else {
+                int x1  = v, x2 = x[v];
+                if( x1 > x2) {
+                    int tmp = x1;
+                    x1 = x2;
+                    x2 = tmp;
+                }
+                bool tag = true;
+                std::pair<int,int> cur = std::make_pair(x1, x2);
+                for(int j = 0; j < L.size(); ++j)
+                    if( L[j]  == cur) {
+                        tag = false;
+                        break;
+                    }
+                if(tag) {
+                    L.push_back(cur);
+                }
+            }
+        }
+        Aut = stabilized_aut;
+    }
+    
+    ordered_pairs.clear(); // In GraphZero paper, this vector's name is 'L'
+
+    for(int i = 0; i < L.size(); ++i) {
+        bool tag = true;
+        for(int j = 0; j < ordered_pairs.size(); ++j)
+            if( L[i].second == ordered_pairs[j].second) {
+                tag = false;
+                if( L[i].first > ordered_pairs[j].first) ordered_pairs[j].first = L[i].first;
+                break;
+            }
+        if(tag) ordered_pairs.push_back(L[i]);
+    }
+    return multiplicity;
+}
+
+void Schedule::GraphZero_get_automorphisms(const int *adj_mat, std::vector< std::vector<int> > &Aut) const {
+    int p[size];
+    Aut.clear();
+    for(int i = 0; i < size; ++i) p[i] = i;
+    do{
+        bool tag = true;
+        for(int i = 0; i < size; ++i) {
+            for(int j = 0; j < size; ++j)
+                if( adj_mat[INDEX(i, j, size)] != adj_mat[INDEX(p[i], p[j], size)]) {
+                    tag = false;
+                    break;
+                }
+            if( !tag ) break;
+        }
+        if(tag) {
+            std::vector<int> tmp;
+            tmp.clear();
+            for(int i = 0; i < size; ++i) tmp.push_back(p[i]);
+            Aut.push_back(tmp);
+        }
+    } while( std::next_permutation(p, p + size) );
+
+}
+//-----end GraphZero's function
 
 std::vector< std::vector<int> > Schedule::get_isomorphism_vec(const int *adj_mat) const
 {
@@ -308,12 +500,10 @@ std::vector< std::vector<int> > Schedule::calc_permutation_group(const std::vect
     return res;
 }
 
+// TODO
+// performance_modeling is not explainable now
+// lots of magic number and formula in code 
 void Schedule::performance_modeling(const int* adj_mat, int* best_order, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info) {
-    printf("begin performance_modeling\n");
-//    double p = 1e-2;
-//    double np = dataset_edge_size * 2.0 / dataset_vertex_size;
-//    printf("p = %.6lf np = %.6lf\n", p, np);
-    // p = 2.0 * dataset_edge_size / dataset_vertex_size / dataset_vertex_size;
     int magic_number = 0;
     int* order;
     int* rank;
@@ -332,27 +522,19 @@ void Schedule::performance_modeling(const int* adj_mat, int* best_order, std::ve
             tmp /= j;
         p_size[i] = graph_degree_info[i] * 1.0 / graph_size_info[i];
         if( i == 2) {
-            puts("in");
-       //     p_size[i] = graph_degree_info[i] * 1.0 / (7515023 * 3);
             p_size[i] = 7515023.0 / 16518948 / 2; 
         }
-        printf("p_size[%d] = %.6lf\n", i, p_size[i]);
     }
-
-//    double* pp;
 
     order = new int[size];
     rank = new int[size];
-//    pp = new double[size]; 
-
- //   pp[0] = 1;
- //   for(int i = 1; i < size; ++i) pp[i] = pp[i - 1] * p;
+    
     for(int i = 0; i < size; ++i) order[i] = i;
     double min_val;
     bool have_best = false;
     std::vector<int> invariant_size[size];
     do {
-        // check if is valid schedule
+        // check whether it is valid schedule
         bool is_valid = true;
         for(int i = 1; i < size; ++i) {
             bool have_edge = false;
@@ -376,7 +558,7 @@ void Schedule::performance_modeling(const int* adj_mat, int* best_order, std::ve
                 cur_adj_mat[INDEX(rank[i], rank[j], size)] = adj_mat[INDEX(i, j, size)];
 
         std::vector< std::pair<int,int> > restricts;
-        int multiplicity = aggresive_optimize(cur_adj_mat, restricts);
+        int multiplicity = aggressive_optimize(cur_adj_mat, restricts);
         int restricts_size = restricts.size();
         std::sort(restricts.begin(), restricts.end());
         double* sum;
@@ -419,13 +601,10 @@ void Schedule::performance_modeling(const int* adj_mat, int* best_order, std::ve
             for(int j = 0; j < invariant_size[i].size(); ++j)
                 if(invariant_size[i][j] > 1) 
                     val += p_size[invariant_size[i][j] - 1] + p_size[1];
-//                    val += np * pp[invariant_size[i][j] - 2] + np;
             for(int j = 0; j < restricts_size; ++j)
                 if(restricts[j].second == i)
                     val *=  sum[j];
             val *= p_size[cnt_forward];
-//            if( i == 0) val *= dataset_vertex_size;
-//            else val *= (magic_number + np * pp[cnt_forward - 1]);
         
         }
         if( have_best == false || val < min_val) {
@@ -435,10 +614,6 @@ void Schedule::performance_modeling(const int* adj_mat, int* best_order, std::ve
             min_val = val;
         }
         
-        for(int i = 0; i < size; ++i)
-            printf("%d ", order[i]);
-        printf("%.6lf\n", val);
-
         delete[] cur_adj_mat;
         delete[] sum;
         delete[] tmp;
@@ -448,5 +623,105 @@ void Schedule::performance_modeling(const int* adj_mat, int* best_order, std::ve
     delete[] order;
     delete[] rank;
     delete[] p_size;
-//    delete[] pp;
+}
+
+void Schedule::init_in_exclusion_optimize(int optimize_num) {
+    in_exclusion_optimize_num = optimize_num;
+
+    int* id;
+    id = new int[ optimize_num ];
+
+    int* in_exclusion_val;
+    in_exclusion_val = new int[ optimize_num * 2];
+
+    for(int n = 1; n <= optimize_num; ++n) {
+        DisjointSetUnion dsu(n);
+        int m = n * (n - 1) / 2;
+        
+        in_exclusion_val[ 2 * n - 2 ] = 0;
+        in_exclusion_val[ 2 * n - 1 ] = 0;
+        
+        if( n == 1) {
+            ++in_exclusion_val[0];
+            continue;
+        }
+
+        std::pair<int,int> edge[m];
+        int e_cnt = 0;
+        for(int i = 0; i < n; ++i)
+            for(int j = 0; j < i; ++j)
+                edge[e_cnt++] = std::make_pair(i,j);
+        
+        for(int s = 0; s < (1<<m); ++s) {
+            dsu.init();
+            int bit_cnt = 0;
+            for(int i = 0; i < m; ++i) 
+                if( s & (1<<i)) {
+                    ++bit_cnt;
+                    dsu.merge(edge[i].first, edge[i].second);
+                }
+            if( dsu.get_set_size() == 1) {
+                if( bit_cnt & 1) ++in_exclusion_val[2 * n -1];
+                else ++in_exclusion_val[ 2 * n - 2];
+            }
+        }
+    }        
+
+    in_exclusion_optimize_group.clear();
+    in_exclusion_optimize_val.clear();
+
+//    printf("begin get_in_exclusion_optimize_group(...)\n");
+//    fflush(stdout);
+
+    get_in_exclusion_optimize_group(0, id, 0, in_exclusion_val);
+
+    delete[] id;
+    delete[] in_exclusion_val;
+}
+
+void Schedule::get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, int* in_exclusion_val) {
+//    printf("depth %d id_cnt %d\n", depth, id_cnt);
+//    fflush(stdout);
+    if( depth == in_exclusion_optimize_num) {
+        int* size = new int[id_cnt];
+        for(int i = 0; i < id_cnt; ++i)
+            size[i] = 0;
+        for(int i = 0; i < in_exclusion_optimize_num; ++i)
+            size[ id[i] ] ++;
+        int val[2];
+        val[0] = in_exclusion_val[ size[0] * 2 - 2 ];
+        val[1] = in_exclusion_val[ size[0] * 2 - 1 ];
+        for(int i = 1; i < id_cnt; ++i) {
+            int tmp0 = val[0];
+            int tmp1 = val[1];
+
+            val[0] = tmp0 * in_exclusion_val[ size[i] * 2 - 2] + tmp1 * in_exclusion_val[ size[i] * 2 - 1];
+            val[1] = tmp0 * in_exclusion_val[ size[i] * 2 - 1] + tmp1 * in_exclusion_val[ size[i] * 2 - 2];
+        }
+
+        std::vector< std::vector<int> > group;
+        group.clear();
+        for(int i = 0; i < id_cnt; ++i) {
+            std::vector<int> cur;
+            cur.clear();
+            for(int j = 0; j < in_exclusion_optimize_num; ++j)
+                if( id[j] == i) cur.push_back(j);
+            group.push_back(cur);
+        }
+
+        in_exclusion_optimize_group.push_back(group);
+        in_exclusion_optimize_val.push_back( val[0] - val[1] );
+
+        delete[] size;
+        return;
+    }
+    
+    id[depth] = id_cnt;
+
+    get_in_exclusion_optimize_group(depth + 1, id, id_cnt + 1, in_exclusion_val);
+    
+    for(int i = 0; i < id_cnt; ++i) {
+        id[depth] = i;
+        get_in_exclusion_optimize_group(depth + 1, id, id_cnt, in_exclusion_val);
+    }
 }

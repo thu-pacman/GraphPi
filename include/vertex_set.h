@@ -8,8 +8,10 @@ public:
     void init();
     // use memory from Graph, do not allocate new memory
     void init(int input_size, int* input_data);
+    void copy(int input_size, int* input_data);
     ~VertexSet();
     void intersection(const VertexSet& set0, const VertexSet& set1, int min_vertex = -1, bool clique = false);
+    void intersection_with(const VertexSet& set1);
     //set1 is unordered
     static int unorderd_subtraction_size(const VertexSet& set0, const VertexSet& set1, int size_after_restrict = -1);
     void insert_ans_sort(int val);

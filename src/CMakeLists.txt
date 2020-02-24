@@ -7,6 +7,7 @@ prefix.cpp
 schedule.cpp
 vertex_set.cpp
 motif_generator.cpp
+disjoint_set_union.cpp
 )
 
 ADD_LIBRARY(graph_mining SHARED ${GraphMiningSrc}) 
