@@ -345,7 +345,7 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
             for (std::pair<int, int> range;;)
             {
                 if ((range = gm.get_vertex_range()).first == -1) break;
-                //for (int vertex = v_cnt - range.second; vertex < v_cnt - range.first; vertex++) {//backwards nearly same as forwards
+                //for (int vertex = v_cnt - range.second; vertex < v_cnt - range.first; vertex++) {//backwards slower than forwards
                 for (int vertex = range.first; vertex < range.second; vertex++) {
                     int l, r;
                     get_edge_index(vertex, l, r);
@@ -354,9 +354,9 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
             }
             delete[] vertex_set;
             gm.report(local_ans);
+            gm.end();
         }
     }
-    gm.end();
     return global_ans;
 }
 

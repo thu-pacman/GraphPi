@@ -204,5 +204,5 @@ void Graphmpi::report(long long local_ans) {
 }
 
 void Graphmpi::end() {
-    printf("node = %d, time = %f\n", my_rank, get_wall_time() - starttime);
+    printf("node = %d, thread = %d, time = %f\n", my_rank, omp_get_thread_num(), get_wall_time() - starttime);
 }
