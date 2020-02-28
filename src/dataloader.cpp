@@ -5,7 +5,7 @@
 #include <cstring>
 
 bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int pattern_size, int max_pattern_degree, int pattern_diameter, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info, int oriented_type) {
-    if(type == Patents || type == Orkut || type == complete8 || type == LiveJournal) {
+    if(type == Patents || type == Orkut || type == complete8 || type == LiveJournal || type == MiCo) {
         if (freopen(path, "r", stdin) == NULL)
         {
             printf("File not found. %s\n", path);

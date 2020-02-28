@@ -8,7 +8,8 @@ enum DataType {
     Patents,
     Orkut,
     complete8,
-    LiveJournal
+    LiveJournal,
+    MiCo
 };
 
 class DataLoader {
