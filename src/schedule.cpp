@@ -725,3 +725,12 @@ void Schedule::get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, i
         get_in_exclusion_optimize_group(depth + 1, id, id_cnt, in_exclusion_val);
     }
 }
+
+void Schedule::print_schedule() {
+    printf("Schedule:\n");
+    for(int i = 0; i < size; ++i) {
+        for(int j = 0; j < size; ++j)
+            printf("%d", adj_mat[INDEX(i,j,size)]);
+        puts("");
+    }
+}

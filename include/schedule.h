@@ -39,7 +39,9 @@ public:
     
     //use principle of inclusion-exclusion to optimize
     void init_in_exclusion_optimize(int optimize_num);
-    
+
+    void print_schedule();
+
     std::vector< std::vector< std::vector<int> > >in_exclusion_optimize_group;
     std::vector< int > in_exclusion_optimize_val;
 private:
