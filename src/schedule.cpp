@@ -216,7 +216,6 @@ int Schedule::aggressive_optimize(const int *adj_mat, std::vector< std::pair<int
                 {
                    ++two_element_number;
                     found_pair = std::pair<int ,int>(v[0], v[1]);
-                    printf("found pair %d %d %d\n", v[0], v[1], isomorphism_vec.size());
                     break;
                 }
             if (two_element_number >= 1)
@@ -315,7 +314,6 @@ void Schedule::aggressive_optimize_dfs(Pattern base_dag, std::vector< std::vecto
     
     if(isomorphism_vec.size() == 1) {
         ordered_pairs_vector.push_back(ordered_pairs);
-        printf("end one\n");
         return;
     }
 
@@ -329,7 +327,6 @@ void Schedule::aggressive_optimize_dfs(Pattern base_dag, std::vector< std::vecto
             {
                 ++two_element_number;
                 found_pair = std::pair<int ,int>(v[0], v[1]);
-                printf("found pair%d %d %d\n", v[0],v[1], isomorphism_vec.size());
                 std::vector< std::vector< std::vector<int> > > next_permutation_groups = permutation_groups;
                 std::vector< std::vector<int> > next_isomorphism_vec = isomorphism_vec;
                 std::vector< std::pair<int,int> > next_ordered_pairs = ordered_pairs;
