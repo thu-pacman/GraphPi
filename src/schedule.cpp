@@ -216,6 +216,7 @@ int Schedule::aggressive_optimize(const int *adj_mat, std::vector< std::pair<int
                 {
                    ++two_element_number;
                     found_pair = std::pair<int ,int>(v[0], v[1]);
+                    printf("found pair %d %d %d\n", v[0], v[1], isomorphism_vec.size());
                     break;
                 }
             if (two_element_number >= 1)
@@ -289,13 +290,13 @@ int Schedule::aggressive_optimize_get_all_pairs(const int *adj_mat, std::vector<
 
     aggressive_optimize_dfs(base_dag, isomorphism_vec, permutation_groups, ordered_pairs, ordered_pairs_vector);
 
+//    for(int i = 0; i < ordered_pairs_vector.size(); ++i)
+//        std::sort(ordered_pairs_vector[i].begin(), ordered_pairs_vector[i].end());
+//    std::unique(ordered_pairs_vector.begin(),ordered_pairs_vector.end());
+
     return ret;
 }
 void Schedule::aggressive_optimize_dfs(Pattern base_dag, std::vector< std::vector<int> > isomorphism_vec, std::vector< std::vector< std::vector<int> > > permutation_groups, std::vector< std::pair<int,int> > ordered_pairs, std::vector< std::vector< std::pair<int,int> > >& ordered_pairs_vector) {
-    if(isomorphism_vec.size() == 1) {
-        ordered_pairs_vector.push_back(ordered_pairs);
-        return;
-    }
 
     for (unsigned int i = 0; i < isomorphism_vec.size(); )
     {
@@ -311,6 +312,13 @@ void Schedule::aggressive_optimize_dfs(Pattern base_dag, std::vector< std::vecto
         else
             ++i;
     }
+    
+    if(isomorphism_vec.size() == 1) {
+        ordered_pairs_vector.push_back(ordered_pairs);
+        printf("end one\n");
+        return;
+    }
+
 
     std::pair<int, int> found_pair;
     for (unsigned int i = 0; i < permutation_groups.size(); )
@@ -321,6 +329,7 @@ void Schedule::aggressive_optimize_dfs(Pattern base_dag, std::vector< std::vecto
             {
                 ++two_element_number;
                 found_pair = std::pair<int ,int>(v[0], v[1]);
+                printf("found pair%d %d %d\n", v[0],v[1], isomorphism_vec.size());
                 std::vector< std::vector< std::vector<int> > > next_permutation_groups = permutation_groups;
                 std::vector< std::vector<int> > next_isomorphism_vec = isomorphism_vec;
                 std::vector< std::pair<int,int> > next_ordered_pairs = ordered_pairs;
@@ -338,7 +347,7 @@ void Schedule::aggressive_optimize_dfs(Pattern base_dag, std::vector< std::vecto
             break;
         }
         else {
-            ++i;
+           ++i;
         }
     }
 
