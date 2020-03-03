@@ -16,7 +16,7 @@ public:
     void end();
 
 private:
-    static const int MAXN = 1 << 22, MAXTHREAD = 24, chunksize = 32;
+    static const int MAXN = 1 << 22, MAXTHREAD = 24, chunksize = 8;
     Graph* graph;
     int comm_sz, my_rank, mynodel, mynoder, blocksize, idlethreadcnt, threadcnt, global_vertex, vertex[MAXTHREAD];
     long long node_ans = 0;
