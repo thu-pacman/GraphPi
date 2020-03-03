@@ -1,6 +1,7 @@
 #pragma once
 #include <set>
 #include <vector>
+#include <cstdio>
 
 #ifndef INDEX
 #define INDEX(x,y,n) ((x)*(n)+(y)) 
@@ -14,6 +15,7 @@ enum PatternType {
     Cycle_6_Tri,
     Clique_7_Minus
 };
+
 
 class Pattern
 {

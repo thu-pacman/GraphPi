@@ -34,28 +34,41 @@ Pattern::Pattern(const Pattern& p)
 Pattern::Pattern(PatternType type) {
     if( type == PatternType::Rectangle) {
         size = 4;
-        for(int i = 0; i < size; ++i)
-            add_edge(i, i + 1 < size ? i + 1 : 0);
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
+        add_edge(0, 1);
+        add_edge(0, 2);
+        add_edge(1, 3);
+        add_edge(2, 3);
         return;
     }
     if( type == PatternType::Pentagon) {
         size = 5;
-        for(int i = 0; i < size; ++i)
-            add_edge(i, i + 1 < size ? i + 1 : 0);
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
+        add_edge(0, 1); 
+        add_edge(0, 2); 
+        add_edge(1, 3); 
+        add_edge(2, 4); 
+        add_edge(3, 4); 
         return;
     }
     if( type == PatternType::House) {
         size = 5;
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
         add_edge(0, 1);
         add_edge(0, 2);
-        add_edge(1, 2);
+        add_edge(0, 3);
         add_edge(1, 3);
-        add_edge(3, 4);
+        add_edge(1, 4);
         add_edge(2, 4);
         return;
     }
     if( type == PatternType::Hourglass) {
         size = 6;
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
         add_edge(0, 1);
         add_edge(0, 2);
         add_edge(0, 4);
@@ -69,6 +82,8 @@ Pattern::Pattern(PatternType type) {
     }
     if( type == PatternType::Cycle_6_Tri) {
         size = 6;
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
         add_edge(0, 1);
         add_edge(0, 2);
         add_edge(1, 2);
@@ -82,9 +97,12 @@ Pattern::Pattern(PatternType type) {
     }
     if( type == PatternType::Clique_7_Minus) {
         size = 7;
-        for(int i = 2; i < size; ++i)
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
+        for(int i = 0; i < size; ++i)
             for(int j = 0; j < i; ++j)
-                add_edge(j, i);
+                if( i != size - 1|| j != size - 2) 
+                    add_edge(j, i);
         return;
     }
 
