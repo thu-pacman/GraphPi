@@ -10,7 +10,10 @@ class Schedule
 {
 public:
     //TODO : more kinds of constructors to construct different Schedules from one Pattern
-    Schedule(const Pattern& pattern, bool& is_pattern_valid, bool use_performance_modeling, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info);
+    Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info);
+    // performance_modeling type = 0 : not use modeling
+    //                      type = 1 : use our modeling
+    //                      type = 2 : use GraphZero's modeling
     ~Schedule();
     inline int get_total_prefix_num() const { return total_prefix_num;}
     inline int get_father_prefix_id(int prefix_id) const { return father_prefix_id[prefix_id];}
@@ -63,5 +66,9 @@ private:
     int find_father_prefix(int data_size, const int* data);
     void get_full_permutation(std::vector< std::vector<int> >& vec, bool use[], std::vector<int> tmp_vec, int depth) const;
     void performance_modeling(const int *adj_mat, int* best_order, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info);
+    //------GraphZero's algorithm for restriction generation
+    void GraphZero_performance_modeling(const int *adj_mat, int* best_order, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info);
+    //------Graph Zero's function end
+    //TODO function above have not defined
     void get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, int* in_exclusion_val);
 };

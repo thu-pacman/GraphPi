@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <algorithm>
 
-Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, bool use_performance_modeling, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info)
+Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info)
 {
     is_pattern_valid = true;
     size = pattern.get_size();
@@ -14,13 +14,18 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, bool use_perf
     //If we use performance_modeling, we may change the order of vertex,
     //the best order produced by performance_modeling(...) is saved in best_order[]
     //Finally, we use best_order[] to relocate adj_mat
-    if( use_performance_modeling) {
+    if( performance_modeling_type != 0) {
 
         const int* pattern_adj_mat = pattern.get_adj_mat_ptr();
         int *best_order;
         best_order = new int[size];
 
-        performance_modeling(pattern_adj_mat, best_order, graph_degree_info, graph_size_info);
+        if( performance_modeling_type == 1) {
+            performance_modeling(pattern_adj_mat, best_order, graph_degree_info, graph_size_info);
+        }
+        else {
+            GraphZero_performance_modeling(pattern_adj_mat, best_order, graph_degree_info, graph_size_info);
+        }
         int *rank;
         rank = new int[size];
         for(int i = 0; i < size; ++i) rank[best_order[i]] = i;
@@ -517,19 +522,14 @@ void Schedule::performance_modeling(const int* adj_mat, int* best_order, std::ve
     double* p_size;
     int max_degree = graph_degree_info.size();
     p_size = new double[max_degree];
+
+    long long n = graph_degree_info[0];
+    long long m = graph_degree_info[1];
+    double p = m * 1.0 / n / n;
     
     p_size[0] = graph_degree_info[0];
     for(int i = 1;i < max_degree; ++i) {
-        long long tmp = 1;
-        long long n = graph_degree_info[0] / 100000;
-        for(long long j = n; j > n - i; --j)
-            tmp *= j;
-        for(long long j = 2; j <= i; ++j)
-            tmp /= j;
-        p_size[i] = graph_degree_info[i] * 1.0 / graph_size_info[i];
-        if( i == 2) {
-            p_size[i] = 7515023.0 / 16518948 / 2; 
-        }
+        p_size[i] = p_size[i-1] * p;
     }
 
     order = new int[size];
@@ -739,4 +739,116 @@ void Schedule::print_schedule() {
             printf("%d", adj_mat[INDEX(i,j,size)]);
         puts("");
     }
+}
+
+void Schedule::GraphZero_performance_modeling(const int *adj_mat, int* best_order, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info) {
+    //TODO
+    int magic_number = 0;
+    int* order;
+    int* rank;
+
+    double* p_size;
+    double* anti_p;
+    int max_degree = graph_degree_info.size();
+    p_size = new double[max_degree];
+    anti_p = new double[max_degree];
+
+    long long n = graph_degree_info[0];
+    long long m = graph_degree_info[1];
+    double p = m * 1.0 / n / n;
+    
+    p_size[0] = graph_degree_info[0];
+    for(int i = 1; i < max_degree; ++i) {
+        p_size[i] = p_size[i-1] * p;
+    }
+    anti_p[0] = 1;
+    for(int i = 1; i < max_degree; ++i) {
+        anti_p[i] = anti_p[i-1] * (1-p);
+    }
+
+    order = new int[size];
+    rank = new int[size];
+    
+    for(int i = 0; i < size; ++i) order[i] = i;
+    double min_val;
+    bool have_best = false;
+    do {
+        // check whether it is valid schedule
+        bool is_valid = true;
+        for(int i = 1; i < size; ++i) {
+            bool have_edge = false;
+            for(int j = 0; j < i; ++j)
+                if( adj_mat[INDEX(order[i], order[j], size)]) {
+                    have_edge = true;
+                    break;
+                }
+            if( have_edge == false) {
+                is_valid = false;
+                break;
+            }
+        }
+        if( is_valid == false ) continue;
+        
+        for(int i = 0; i < size; ++i) rank[order[i]] = i;
+        int* cur_adj_mat;
+        cur_adj_mat = new int[size*size];
+        for(int i = 0; i < size; ++i)
+            for(int j = 0; j < size; ++j)
+                cur_adj_mat[INDEX(rank[i], rank[j], size)] = adj_mat[INDEX(i, j, size)];
+
+        std::vector< std::pair<int,int> > restricts;
+        int multiplicity = aggressive_optimize(cur_adj_mat, restricts);
+        int restricts_size = restricts.size();
+        std::sort(restricts.begin(), restricts.end());
+        double* sum;
+        sum = new double[restricts_size];
+        for(int i = 0; i < restricts_size; ++i) sum[i] = 0;
+        int* tmp;
+        tmp = new int[size];
+        for(int i = 0; i < size; ++i) tmp[i] = i;
+        do {
+            for(int i = 0; i < restricts_size; ++i)
+                if(tmp[restricts[i].first] > tmp[restricts[i].second]) {
+                    sum[i] += 1;
+                }
+                else break;
+        } while( std::next_permutation(tmp, tmp + size));
+        double total = 1;
+        for(int i = 2; i <= size; ++i) total *= i;
+        for(int i = 0; i < restricts_size; ++i)
+            sum[i] = sum[i] /total;
+        for(int i = restricts_size - 1; i > 0; --i)
+            sum[i] /= sum[i - 1];
+
+        double val = 1;
+        for(int i = size - 1; i >= 0; --i) {
+            int cnt_forward = 0;
+            int cnt_backward = 0;
+            for(int j = 0; j < i; ++j)
+                if(cur_adj_mat[INDEX(j, i, size)])
+                    ++cnt_forward;
+
+            for(int j = 0; j < restricts_size; ++j)
+                if(restricts[j].second == i)
+                    val *=  sum[j];
+            val *= p_size[cnt_forward] * anti_p[i - cnt_forward];
+        
+        }
+        if( have_best == false || val < min_val) {
+            have_best = true;
+            for(int i = 0; i < size; ++i)
+                best_order[i] = order[i];
+            min_val = val;
+        }
+        
+        delete[] cur_adj_mat;
+        delete[] sum;
+        delete[] tmp;
+
+    } while( std::next_permutation(order, order + size) );
+
+    delete[] order;
+    delete[] rank;
+    delete[] p_size;
+    delete[] anti_p;
 }
