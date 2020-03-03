@@ -29,10 +29,7 @@ TEST(pattern_matching_test, pattern_matching_patents_triangle) {
     std::vector<long long> graph_degree_info;
     std::vector<long long> graph_size_info;
     
-    Pattern pattern(pattern_size);
-    pattern.add_edge(0, 1);
-    pattern.add_edge(0, 2);
-    pattern.add_edge(1, 2);
+    Pattern pattern(PatternType::Hourglass);
 
     ASSERT_EQ(D.load_data(g,my_type,path.c_str(), pattern_size, max_pattern_degree, pattern_diameter, graph_degree_info, graph_size_info),true); 
     

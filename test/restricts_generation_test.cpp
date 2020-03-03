@@ -9,43 +9,17 @@
 #include <string>
 #include <algorithm>
 
-TEST(restricts_generation_test, restricts_generation_pattern3x3) {
-    Graph *g;
-    DataLoader D;
-    
-    std::string type = "Patents";
-    std::string path = "/home/zms/patents_input";
-    DataType my_type;
-    if(type == "Patents") my_type = DataType::Patents;
-    else {
-        printf("invalid DataType!\n");
-    }
-
+void test_pattern(Graph *g, PatternType type) {
     std::vector<long long> graph_degree_info;
     std::vector<long long> graph_size_info;
     
-    int pattern_size = 6;
-    int pattern_diameter = 1;
-    int max_pattern_degree = 2;
+    Pattern pattern(type);
     
-    Pattern pattern(pattern_size);
-    pattern.add_edge(0, 1);
-    pattern.add_edge(0, 2);
-    pattern.add_edge(0, 3);
-    pattern.add_edge(4, 1);
-    pattern.add_edge(4, 2);
-    pattern.add_edge(4, 3);
-    pattern.add_edge(5, 1);
-    pattern.add_edge(5, 2);
-    pattern.add_edge(5, 3);
+    printf("test pattern : ");
+    PatternType_printer(type);
     
-    ASSERT_EQ(D.load_data(g,my_type,path.c_str(), pattern_size, max_pattern_degree, pattern_diameter, graph_degree_info, graph_size_info),true); 
-    
-    printf("Load data success!\n");
-    fflush(stdout);
-
     bool is_pattern_valid;
-    bool use_performance_modeling = false;
+    int use_performance_modeling = 0;
     Schedule schedule(pattern, is_pattern_valid, use_performance_modeling, graph_degree_info, graph_size_info);
 
     ASSERT_EQ(is_pattern_valid, true);
@@ -96,6 +70,39 @@ TEST(restricts_generation_test, restricts_generation_pattern3x3) {
         fflush(stdout);
 
     }
+}
 
+TEST(restricts_generation_test, restricts_generation_pattern3x3) {
+    Graph *g;
+    DataLoader D;
+    
+    std::string type = "Patents";
+    std::string path = "/home/zms/patents_input";
+    DataType my_type;
+    if(type == "Patents") my_type = DataType::Patents;
+    else {
+        printf("invalid DataType!\n");
+    }
+
+    std::vector<long long> graph_degree_info;
+    std::vector<long long> graph_size_info;
+    
+    int pattern_size = 6;
+    int pattern_diameter = 1;
+    int max_pattern_degree = 2;
+    
+    ASSERT_EQ(D.load_data(g,my_type,path.c_str(), pattern_size, max_pattern_degree, pattern_diameter, graph_degree_info, graph_size_info),true); 
+    
+    printf("Load data success!\n");
+    fflush(stdout);
+
+
+//    test_pattern(g, PatternType::Rectangle);
+//    test_pattern(g, PatternType::Pentagon);
+//    test_pattern(g, PatternType::House);
+//    test_pattern(g, PatternType::Hourglass);
+    test_pattern(g, PatternType::Cycle_6_Tri);
+    test_pattern(g, PatternType::Clique_7_Minus);
+    
     delete g;
 }
