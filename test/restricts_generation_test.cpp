@@ -10,8 +10,6 @@
 #include <algorithm>
 
 void test_pattern(Graph *g, PatternType type) {
-    std::vector<long long> graph_degree_info;
-    std::vector<long long> graph_size_info;
     
     Pattern pattern(type);
     
@@ -19,9 +17,8 @@ void test_pattern(Graph *g, PatternType type) {
     PatternType_printer(type);
     
     bool is_pattern_valid;
-    int use_performance_modeling = 0;
-    Schedule schedule(pattern, is_pattern_valid, use_performance_modeling, graph_degree_info, graph_size_info);
-
+    int performance_modeling_type = 0;
+    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     std::vector< std::vector< std::pair<int,int> > >pairs_group;
@@ -47,9 +44,7 @@ void test_pattern(Graph *g, PatternType type) {
     fflush(stdout);
 
     for(int rank = 0; rank < pairs_group.size(); ++rank) {
-        bool is_pattern_valid;
-        Schedule schedule(pattern, is_pattern_valid, use_performance_modeling, graph_degree_info, graph_size_info);
-
+        Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
         ASSERT_EQ(is_pattern_valid, true);
 
         schedule.add_restrict(pairs_group[rank]);
@@ -84,14 +79,7 @@ TEST(restricts_generation_test, restricts_generation_pattern3x3) {
         printf("invalid DataType!\n");
     }
 
-    std::vector<long long> graph_degree_info;
-    std::vector<long long> graph_size_info;
-    
-    int pattern_size = 6;
-    int pattern_diameter = 1;
-    int max_pattern_degree = 2;
-    
-    ASSERT_EQ(D.load_data(g,my_type,path.c_str(), pattern_size, max_pattern_degree, pattern_diameter, graph_degree_info, graph_size_info),true); 
+    ASSERT_EQ(D.load_data(g,my_type,path.c_str()), true);
     
     printf("Load data success!\n");
     fflush(stdout);

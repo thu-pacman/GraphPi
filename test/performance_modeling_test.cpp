@@ -21,25 +21,16 @@ TEST(performance_modeling_test, performance_modeling_patents_qg3) {
         printf("invalid DataType!\n");
     }
 
-    // These variables are used in performance modeling,
-    // but performance_modeling is not acceptable now.
-    int pattern_size = 5;
-    int pattern_diameter = 2;
-    int max_pattern_degree = 3;
-    std::vector<long long> graph_degree_info;
-    std::vector<long long> graph_size_info;
-    
-    Pattern pattern(PatternType::House);
-
-    ASSERT_EQ(D.load_data(g,my_type,path.c_str(), pattern_size, max_pattern_degree, pattern_diameter, graph_degree_info, graph_size_info),true); 
+    ASSERT_EQ(D.load_data(g,my_type,path.c_str()),true);
     
     printf("Load data success!\n");
     fflush(stdout);
+    
+    Pattern pattern(PatternType::House);
 
     bool is_pattern_valid = false;
-    int use_performance_modeling = 1;
-    Schedule schedule(pattern, is_pattern_valid, use_performance_modeling, graph_degree_info, graph_size_info);
-    
+    int performance_modeling_type = 1;
+    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     printf("performance modeling adj_mat\n");

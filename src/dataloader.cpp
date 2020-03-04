@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 
-bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int pattern_size, int max_pattern_degree, int pattern_diameter, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info, int oriented_type) {
+bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int oriented_type) {
     if(type == Patents || type == Orkut || type == complete8 || type == LiveJournal || type == MiCo) {
         if (freopen(path, "r", stdin) == NULL)
         {
@@ -60,19 +60,6 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int patte
         }
         std::sort(degree, degree + g->v_cnt);
 
-        // get graph degree info for performancel modeling
-        graph_degree_info.clear();
-        graph_degree_info.push_back(g->v_cnt);
-        graph_degree_info.push_back(g->e_cnt);
-        for(int k = 2; k <= max_pattern_degree; ++k) {
-            long long val = 0;
-            for(int i = 0; i < g->v_cnt; ++i) {
-                val += comb(degree[i],k);
-                if( val < 0 ) printf("too big when get graph info\n");
-            }
-            graph_degree_info.push_back(val);
-        }
-
         // The max size of intersections is the second largest degree.
         VertexSet::max_intersection_size = degree[g->v_cnt - 2];
         delete[] degree;
@@ -117,58 +104,9 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int patte
         for(int i = g->v_cnt - 2; i >= 0; --i)
             if(g->vertex[i] == -1) {
                 g->vertex[i] = g->vertex[i+1];
-            
-            }
-        //get graph size info for performance modeling
 
-        int* vis = new int[g->v_cnt];
-        for(int i = 0; i < g->v_cnt; ++i) vis[i] = 0;
-        int vis_clock = 0;
-        int* bfs_q = new int[g->v_cnt];
-        int bfs_q_head = 0;
-        int bfs_q_tail = 0;
-        int *dis = new int[g->v_cnt];
-        
-        graph_size_info.clear();
-        graph_size_info.push_back(1);
-        graph_size_info.push_back(g->v_cnt);
-        for(int i = 2; i < pattern_size; ++i)
-            graph_size_info.push_back(0);
-
-        for(int root = 0; root < g->v_cnt; ++root) {
-            int sum = 0;
-
-            vis_clock++;
-            bfs_q_head = bfs_q_tail = 0;
-            
-            bfs_q[bfs_q_tail++] = root;
-            vis[root] = vis_clock;
-            dis[root] = 0;
-            while( bfs_q_head < bfs_q_tail ) {
-                int cur = bfs_q[ bfs_q_head++ ];
-                ++sum;
-                if( dis[cur] == pattern_diameter) continue;
-                for(int i = g->vertex[cur]; i < g->vertex[cur + 1]; ++i)
-                    if( vis[g->edge[i]] != vis_clock) {
-                        vis[g->edge[i]] = vis_clock;
-                        dis[g->edge[i]] = dis[cur] + 1;
-                        bfs_q[bfs_q_tail++] = g->edge[i];
-                    }
             }
 
-            for(int i = 2; i < pattern_size; ++i) 
-                graph_size_info[i] += comb(sum - 1, i - 1);
-        }
-
-        for(long long i = 2; i < pattern_size; ++i)
-            graph_size_info[i] /= i;
-            
-
-        delete[] vis;
-        delete[] bfs_q;
-        delete[] dis;
-
-  
         return true;
     }
     printf("invalid DataType!\n");

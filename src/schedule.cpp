@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <algorithm>
 
-Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info)
+Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, int v_cnt, int e_cnt)
 {
     is_pattern_valid = true;
     size = pattern.get_size();
@@ -21,10 +21,10 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
         best_order = new int[size];
 
         if( performance_modeling_type == 1) {
-            performance_modeling(pattern_adj_mat, best_order, graph_degree_info, graph_size_info);
+            performance_modeling(pattern_adj_mat, best_order, v_cnt, e_cnt);
         }
         else {
-            GraphZero_performance_modeling(pattern_adj_mat, best_order, graph_degree_info, graph_size_info);
+            GraphZero_performance_modeling(pattern_adj_mat, best_order, v_cnt, e_cnt);
         }
         int *rank;
         rank = new int[size];
@@ -94,6 +94,17 @@ Schedule::~Schedule()
     delete[] restrict_last;
     delete[] restrict_next;
     delete[] restrict_index;
+}
+
+int Schedule::get_max_degree() {
+    int mx = 0;
+    for(int i = 0; i < size; ++i) {
+        int cnt = 0;
+        for(int j = 0; j < size; ++j)
+            cnt += adj_mat[INDEX(i,j,size)];
+        if(cnt > mx) mx = cnt;
+    }
+    return mx;
 }
 
 void Schedule::build_loop_invariant()
@@ -511,23 +522,17 @@ std::vector< std::vector<int> > Schedule::calc_permutation_group(const std::vect
     return res;
 }
 
-// TODO
-// performance_modeling is not explainable now
-// lots of magic number and formula in code 
-void Schedule::performance_modeling(const int* adj_mat, int* best_order, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info) {
-    int magic_number = 0;
+void Schedule::performance_modeling(const int* adj_mat, int* best_order, int v_cnt, int e_cnt) {
     int* order;
     int* rank;
 
     double* p_size;
-    int max_degree = graph_degree_info.size();
+    int max_degree = get_max_degree();
     p_size = new double[max_degree];
 
-    long long n = graph_degree_info[0];
-    long long m = graph_degree_info[1];
-    double p = m * 1.0 / n / n;
+    double p = e_cnt * 1.0 / v_cnt / v_cnt;
     
-    p_size[0] = graph_degree_info[0];
+    p_size[0] = v_cnt;
     for(int i = 1;i < max_degree; ++i) {
         p_size[i] = p_size[i-1] * p;
     }
@@ -564,7 +569,7 @@ void Schedule::performance_modeling(const int* adj_mat, int* best_order, std::ve
                 cur_adj_mat[INDEX(rank[i], rank[j], size)] = adj_mat[INDEX(i, j, size)];
 
         std::vector< std::pair<int,int> > restricts;
-        int multiplicity = aggressive_optimize(cur_adj_mat, restricts);
+        int multiplicity = GraphZero_aggressive_optimize(cur_adj_mat, restricts);
         int restricts_size = restricts.size();
         std::sort(restricts.begin(), restricts.end());
         double* sum;
@@ -741,23 +746,19 @@ void Schedule::print_schedule() {
     }
 }
 
-void Schedule::GraphZero_performance_modeling(const int *adj_mat, int* best_order, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info) {
-    //TODO
-    int magic_number = 0;
+void Schedule::GraphZero_performance_modeling(const int *adj_mat, int* best_order, int v_cnt, int e_cnt) {
     int* order;
     int* rank;
 
     double* p_size;
     double* anti_p;
-    int max_degree = graph_degree_info.size();
+    int max_degree = get_max_degree();
     p_size = new double[max_degree];
     anti_p = new double[max_degree];
 
-    long long n = graph_degree_info[0];
-    long long m = graph_degree_info[1];
-    double p = m * 1.0 / n / n;
+    double p = e_cnt * 1.0 / v_cnt / v_cnt;
     
-    p_size[0] = graph_degree_info[0];
+    p_size[0] = v_cnt;
     for(int i = 1; i < max_degree; ++i) {
         p_size[i] = p_size[i-1] * p;
     }
@@ -797,7 +798,7 @@ void Schedule::GraphZero_performance_modeling(const int *adj_mat, int* best_orde
                 cur_adj_mat[INDEX(rank[i], rank[j], size)] = adj_mat[INDEX(i, j, size)];
 
         std::vector< std::pair<int,int> > restricts;
-        int multiplicity = aggressive_optimize(cur_adj_mat, restricts);
+        int multiplicity = GraphZero_aggressive_optimize(cur_adj_mat, restricts);
         int restricts_size = restricts.size();
         std::sort(restricts.begin(), restricts.end());
         double* sum;

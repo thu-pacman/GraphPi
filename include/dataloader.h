@@ -15,7 +15,7 @@ enum DataType {
 class DataLoader {
 public:
 
-    bool load_data(Graph* &g, DataType type, const char* path, int pattern_size, int max_pattern_degree, int pattern_diameter, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info, int oriented_type = 0);
+    bool load_data(Graph* &g, DataType type, const char* path, int oriented_type = 0);
         // pattern_diameter means max distance between two vertex in graph
         // oriented_type is used to reorder dataset
         // oriented_type == 0 do nothing

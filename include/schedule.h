@@ -10,7 +10,7 @@ class Schedule
 {
 public:
     //TODO : more kinds of constructors to construct different Schedules from one Pattern
-    Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info);
+    Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, int v_cnt, int e_cnt);
     // performance_modeling type = 0 : not use modeling
     //                      type = 1 : use our modeling
     //                      type = 2 : use GraphZero's modeling
@@ -27,6 +27,7 @@ public:
     inline int get_restrict_last(int i) const { return restrict_last[i];}
     inline int get_restrict_next(int i) const { return restrict_next[i];}
     inline int get_restrict_index(int i) const { return restrict_index[i];}
+    int get_max_degree();
     int aggressive_optimize(const int *adj_mat, std::vector< std::pair<int,int> >& ordered_pairs) const;
     int aggressive_optimize_get_all_pairs(const int *adj_mat, std::vector< std::vector< std::pair<int,int> > >& ordered_pairs_vector);
     void aggressive_optimize_dfs(Pattern base_dag, std::vector< std::vector<int> > isomorphism_vec, std::vector< std::vector< std::vector<int> > > permutation_groups, std::vector< std::pair<int,int> > ordered_pairs, std::vector< std::vector< std::pair<int,int> > >& ordered_pairs_vector);
@@ -65,9 +66,9 @@ private:
     void build_loop_invariant();
     int find_father_prefix(int data_size, const int* data);
     void get_full_permutation(std::vector< std::vector<int> >& vec, bool use[], std::vector<int> tmp_vec, int depth) const;
-    void performance_modeling(const int *adj_mat, int* best_order, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info);
+    void performance_modeling(const int *adj_mat, int* best_order, int v_cnt, int e_cnt);
     //------GraphZero's algorithm for restriction generation
-    void GraphZero_performance_modeling(const int *adj_mat, int* best_order, std::vector<long long> &graph_degree_info, std::vector<long long> &graph_size_info);
+    void GraphZero_performance_modeling(const int *adj_mat, int* best_order, int v_cnt, int e_cnt);
     //------Graph Zero's function end
     //TODO function above have not defined
     void get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, int* in_exclusion_val);

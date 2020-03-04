@@ -9,9 +9,6 @@
 #include <string>
 #include <algorithm>
 
-std::vector<long long> graph_degree_info;
-std::vector<long long> graph_size_info;
-
 void test_pattern(Graph* g, PatternType type) {
     Pattern pattern(type);
     
@@ -22,11 +19,11 @@ void test_pattern(Graph* g, PatternType type) {
     int performance_modeling_type;
     
     performance_modeling_type = 1;
-    Schedule schedule_our(pattern, is_pattern_valid, performance_modeling_type, graph_degree_info, graph_size_info);
+    Schedule schedule_our(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     performance_modeling_type = 2;
-    Schedule schedule_gz(pattern, is_pattern_valid, performance_modeling_type, graph_degree_info, graph_size_info);
+    Schedule schedule_gz(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     if( is_equal_adj_mat( schedule_our.get_adj_mat_ptr(), schedule_gz.get_adj_mat_ptr(), pattern.get_size())) {
@@ -39,7 +36,7 @@ void test_pattern(Graph* g, PatternType type) {
     schedule_gz.add_restrict(gz_pairs);
 
     std::vector< std::pair<int,int> > our_pairs;
-    schedule_our.aggressive_optimize( schedule_our.get_adj_mat_ptr(), our_pairs);
+    schedule_our.GraphZero_aggressive_optimize( schedule_our.get_adj_mat_ptr(), our_pairs);
     schedule_our.add_restrict(our_pairs);
 
     int thread_num = 24;
@@ -54,7 +51,16 @@ void test_pattern(Graph* g, PatternType type) {
     t4 = get_wall_time();
 
     printf("our ans: %lld time: %.6lf\n", ans_our, t2 - t1);
+    schedule_our.print_schedule();
+    for(int i = 0; i < our_pairs.size(); ++i)
+        printf("(%d,%d)",our_pairs[i].first, our_pairs[i].second);
+    puts("");
+
     printf("GZ  ans: %lld time: %.6lf\n", ans_gz, t4 - t3);
+    schedule_gz.print_schedule();
+    for(int i = 0; i < gz_pairs.size(); ++i)
+        printf("(%d,%d)",gz_pairs[i].first, gz_pairs[i].second);
+    puts("");
 }
 
 TEST(schedule_compare_test, schedule_compare_patents) {
@@ -69,15 +75,9 @@ TEST(schedule_compare_test, schedule_compare_patents) {
         printf("invalid DataType!\n");
     }
 
-    // These variables are used in performance modeling,
-    // but performance_modeling is not acceptable now.
-    int pattern_size = 5;
-    int pattern_diameter = 2;
-    int max_pattern_degree = 3;
-    
     Pattern pattern(PatternType::House);
 
-    ASSERT_EQ(D.load_data(g,my_type,path.c_str(), pattern_size, max_pattern_degree, pattern_diameter, graph_degree_info, graph_size_info),true); 
+    ASSERT_EQ(D.load_data(g,my_type,path.c_str()),true); 
     
     printf("Load data success!\n");
     fflush(stdout);

@@ -21,25 +21,16 @@ TEST(pattern_matching_test, pattern_matching_patents_triangle) {
         printf("invalid DataType!\n");
     }
 
-    // These variables are used in performance modeling,
-    // but performance_modeling is not acceptable now.
-    int pattern_size = 3;
-    int pattern_diameter = 1;
-    int max_pattern_degree = 2;
-    std::vector<long long> graph_degree_info;
-    std::vector<long long> graph_size_info;
-    
-    Pattern pattern(PatternType::Hourglass);
-
-    ASSERT_EQ(D.load_data(g,my_type,path.c_str(), pattern_size, max_pattern_degree, pattern_diameter, graph_degree_info, graph_size_info),true); 
+    ASSERT_EQ(D.load_data(g,my_type,path.c_str()), true);
     
     printf("Load data success!\n");
     fflush(stdout);
+    
+    Pattern pattern(PatternType::Hourglass);
 
     bool is_pattern_valid = false;
-    bool use_performance_modeling = false;
-    Schedule schedule(pattern, is_pattern_valid, use_performance_modeling, graph_degree_info, graph_size_info);
-
+    int performance_modeling_type = 0;
+    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     std::vector< std::pair<int,int> > pairs;
