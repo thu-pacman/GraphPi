@@ -32,11 +32,11 @@ void test_pattern(Graph* g, PatternType type) {
     }
 
     std::vector< std::pair<int,int> > gz_pairs;
-    schedule_gz.GraphZero_aggressive_optimize( schedule_gz.get_adj_mat_ptr(), gz_pairs);
+    schedule_gz.GraphZero_aggressive_optimize(gz_pairs);
     schedule_gz.add_restrict(gz_pairs);
 
     std::vector< std::pair<int,int> > our_pairs;
-    schedule_our.GraphZero_aggressive_optimize( schedule_our.get_adj_mat_ptr(), our_pairs);
+    schedule_our.GraphZero_aggressive_optimize(our_pairs);
     schedule_our.add_restrict(our_pairs);
 
     int thread_num = 24;

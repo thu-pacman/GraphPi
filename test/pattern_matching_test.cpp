@@ -34,8 +34,7 @@ TEST(pattern_matching_test, pattern_matching_patents_triangle) {
     ASSERT_EQ(is_pattern_valid, true);
 
     std::vector< std::pair<int,int> > pairs;
-    schedule.aggressive_optimize( schedule.get_adj_mat_ptr(), pairs);
-
+    schedule.aggressive_optimize(pairs);
     schedule.add_restrict(pairs);
 
     printf("aggressive optimize success!\n");

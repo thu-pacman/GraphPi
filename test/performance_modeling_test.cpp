@@ -36,10 +36,9 @@ TEST(performance_modeling_test, performance_modeling_patents_qg3) {
     printf("performance modeling adj_mat\n");
     schedule.print_schedule();
 
-/*
-    std::vector< std::pair<int,int> > pairs;
-    schedule.aggressive_optimize( schedule.get_adj_mat_ptr(), pairs);
 
+    std::vector< std::pair<int,int> > pairs;
+    schedule.aggressive_optimize(pairs);
     schedule.add_restrict(pairs);
 
     printf("aggressive optimize success!\n");
@@ -57,6 +56,6 @@ TEST(performance_modeling_test, performance_modeling_patents_qg3) {
     t2 = get_wall_time();
 
     printf("ans: %lld time: %.6lf\n", ans, t2 - t1);
-*/
+
     delete g;
 }

@@ -22,10 +22,10 @@ void test_pattern(Graph *g, PatternType type) {
     ASSERT_EQ(is_pattern_valid, true);
 
     std::vector< std::vector< std::pair<int,int> > >pairs_group;
-    schedule.aggressive_optimize_get_all_pairs( schedule.get_adj_mat_ptr(), pairs_group);
+    schedule.aggressive_optimize_get_all_pairs(pairs_group);
     
     std::vector< std::pair<int,int> > gz_pairs;
-    schedule.GraphZero_aggressive_optimize( schedule.get_adj_mat_ptr(), gz_pairs);
+    schedule.GraphZero_aggressive_optimize(gz_pairs);
 
     schedule.add_restrict(gz_pairs);
 
