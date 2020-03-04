@@ -35,5 +35,13 @@ if (GTEST_FOUND)
                         pthread
                         gomp)
     gtest_discover_tests(schedule_compare_test)
+    
+    ADD_EXECUTABLE(restricts_compare_test restricts_compare_test.cpp)
+    TARGET_LINK_LIBRARIES(restricts_compare_test
+                        ${GTEST_BOTH_LIBRARIES}
+                        graph_mining
+                        pthread
+                        gomp)
+    gtest_discover_tests(restricts_compare_test)
 endif()
 
