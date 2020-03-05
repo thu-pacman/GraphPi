@@ -7,6 +7,8 @@ prefix.cpp
 schedule.cpp
 vertex_set.cpp
 motif_generator.cpp
+graphmpi.cpp
+common.cpp
 )
 
 ADD_LIBRARY(graph_mining SHARED ${GraphMiningSrc}) 

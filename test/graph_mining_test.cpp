@@ -11,15 +11,16 @@
 #include <mpi.h>
 
 TEST(graph_mining_test, patents_triangle_counting) {
-    int size, rank;
+    /*int size, rank;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    printf("%d of %d\n", rank, size);
-    Graph *g;
+    printf("%d of %d\n", rank, size);*/
+    /*Graph *g;
     DataLoader D;
     
     std::string type = "Patents";
     std::string path = "/home/zms/patents_input";
+    //std::string path = "/home/xuyi/input/4.in";
     DataType my_type;
     if(type == "Patents") my_type = DataType::Patents;
     else {
@@ -32,6 +33,12 @@ TEST(graph_mining_test, patents_triangle_counting) {
     ASSERT_EQ(g->triangle_counting(), 7515023);
     double t2 = get_wall_time();
     printf("brute force single thread TC time: %.6lf\n", t2 - t1);
+
+    double t1 = get_wall_time();
+    ASSERT_EQ(g->triangle_counting_mpi(24), 7515023);
+    //ASSERT_EQ(g->triangle_counting_mpi(24), 4);
+    double t2 = get_wall_time();
+    printf("brute force multi thread multi processing TC with mpi time: %.6lf\n", t2 - t1);
 
     double sum_time = 0.0;
     int thread_num = 24;
@@ -77,11 +84,11 @@ TEST(graph_mining_test, patents_triangle_counting) {
     g->pattern_matching(clique4_schedule, thread_num, false);
     t2 = get_wall_time();
     printf("general %d thread Clique4 without root symmetry time: %.6lf\n", thread_num, t2 - t1);
-    delete g;
+    delete g;*/
 }
 
 TEST(graph_mining_test, orkut_triangle_counting) {
-    Graph *g;
+    /*Graph *g;
     DataLoader D;
     
     std::string type = "Orkut";
@@ -160,5 +167,5 @@ TEST(graph_mining_test, orkut_triangle_counting) {
     printf("general %d thread Clique8 with root symmetry time: %.6lf\n", thread_num, t2 - t1);
 
 
-    delete g;
+    delete g;*/
 }
