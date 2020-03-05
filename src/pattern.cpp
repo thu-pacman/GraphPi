@@ -4,12 +4,19 @@
 #include <set>
 #include <vector>
 #include <cstdio>
+#include <algorithm>
 
-Pattern::Pattern(int _size)
+Pattern::Pattern(int _size, bool clique)
 {
     size = _size;
     adj_mat = new int[size * size];
     memset(adj_mat, 0, size * size * sizeof(int));
+
+    if( clique ) {
+        for(int i = 0; i < size; ++i)
+            for(int j = 0; j < i; ++j)
+                add_edge(i,j);
+    }
 }
 
 Pattern::~Pattern()
@@ -22,6 +29,85 @@ Pattern::Pattern(const Pattern& p)
     size = p.get_size();
     adj_mat = new int[size * size];
     memcpy(adj_mat, p.get_adj_mat_ptr(), size * size * sizeof(int));
+}
+
+Pattern::Pattern(PatternType type) {
+    if( type == PatternType::Rectangle) {
+        size = 4;
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
+        add_edge(0, 1);
+        add_edge(0, 2);
+        add_edge(1, 3);
+        add_edge(2, 3);
+        return;
+    }
+    if( type == PatternType::Pentagon) {
+        size = 5;
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
+        add_edge(0, 1); 
+        add_edge(0, 2); 
+        add_edge(1, 3); 
+        add_edge(2, 4); 
+        add_edge(3, 4); 
+        return;
+    }
+    if( type == PatternType::House) {
+        size = 5;
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
+        add_edge(0, 1);
+        add_edge(0, 2);
+        add_edge(0, 3);
+        add_edge(1, 3);
+        add_edge(1, 4);
+        add_edge(2, 4);
+        return;
+    }
+    if( type == PatternType::Hourglass) {
+        size = 6;
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
+        add_edge(0, 1);
+        add_edge(0, 2);
+        add_edge(0, 4);
+        add_edge(1, 2);
+        add_edge(1, 5);
+        add_edge(2, 3);
+        add_edge(3, 4);
+        add_edge(3, 5);
+        add_edge(4, 5);
+        return;
+    }
+    if( type == PatternType::Cycle_6_Tri) {
+        size = 6;
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
+        add_edge(0, 1);
+        add_edge(0, 2);
+        add_edge(1, 2);
+        add_edge(1, 3);
+        add_edge(1, 4);
+        add_edge(2, 3);
+        add_edge(2, 5);
+        add_edge(0, 4);
+        add_edge(0, 5);
+        return;
+    }
+    if( type == PatternType::Clique_7_Minus) {
+        size = 7;
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
+        for(int i = 0; i < size; ++i)
+            for(int j = 0; j < i; ++j)
+                if( i != size - 1|| j != size - 2) 
+                    add_edge(j, i);
+        return;
+    }
+
+    printf("invalid pattern type!\n");
+    assert(0);
 }
 
 void Pattern::add_edge(int x, int y)
@@ -63,23 +149,6 @@ bool Pattern::check_connected() const
     return true;
 }
 
-void Pattern::get_full_permutation(std::vector< std::vector<int> >& vec, bool use[], std::vector<int> tmp_vec, int depth) const
-{
-    if (depth == size)
-    {
-        vec.push_back(tmp_vec);
-        return;
-    }
-    for (int i = 0; i < size; ++i)
-        if (use[i] == false)
-        {
-            use[i] = true;
-            tmp_vec.push_back(i);
-            get_full_permutation(vec, use, tmp_vec, depth + 1);
-            tmp_vec.pop_back();
-            use[i] = false;
-        }
-}
 
 void Pattern::count_all_isomorphism(std::set< std::set<int> >& s) const
 {
@@ -153,154 +222,20 @@ bool Pattern::is_dag() const
         return false;
 }
 
-std::vector< std::vector<int> > Pattern::calc_permutation_group(const std::vector<int> vec, int size)
+void Pattern::get_full_permutation(std::vector< std::vector<int> >& vec, bool use[], std::vector<int> tmp_vec, int depth) const
 {
-    bool use[size];
+    if (depth == size)
+    {
+        vec.push_back(tmp_vec);
+        return;
+    }
     for (int i = 0; i < size; ++i)
-        use[i] = false;
-    std::vector< std::vector<int> > res;
-    res.clear();
-    for (unsigned int i = 0; i < vec.size(); ++i)
         if (use[i] == false)
         {
-            std::vector<int> tmp_vec;
-            tmp_vec.clear();
-            tmp_vec.push_back(i);
             use[i] = true;
-            int x = vec[i];
-            while (use[x] == false)
-            {
-                use[x] = true;
-                tmp_vec.push_back(x);
-                x = vec[x];
-            }
-            res.push_back(tmp_vec);
+            tmp_vec.push_back(i);
+            get_full_permutation(vec, use, tmp_vec, depth + 1);
+            tmp_vec.pop_back();
+            use[i] = false;
         }
-    return res;
-}
-
-std::vector< std::vector<int> > Pattern::get_isomorphism_vec() const
-{
-    unsigned int pow = 1;
-    for (int i = 2; i <= size; ++i)
-        pow *= i;
-    std::vector< std::vector<int> > vec;
-    vec.clear();
-    bool use[size];
-    for (int i = 0; i < size; ++i)
-        use[i] = false;
-    std::vector<int> tmp_vec;
-    get_full_permutation(vec, use, tmp_vec, 0);
-    assert(vec.size() == pow);
-    std::vector< std::vector<int> > isomorphism_vec;
-    isomorphism_vec.clear();
-    for (const std::vector<int>& v : vec)
-    {
-        bool flag = true;
-        for (int i = 0; i < size; ++i)
-            for (int j = i + 1; j < size; ++j)
-                if (adj_mat[INDEX(i, j, size)] != 0)
-                    if (adj_mat[INDEX(v[i], v[j], size)] == 0) // not isomorphism
-                    {
-                        flag = false;
-                        break;
-                    }
-        if (flag == true)
-            isomorphism_vec.push_back(v);
-    }
-    return isomorphism_vec;
-}
-
-// return the number of isomorphism
-int Pattern::aggresive_optimize(std::vector< std::pair<int, int> >& ordered_pairs) const
-{
-    std::vector< std::vector<int> > isomorphism_vec = get_isomorphism_vec();
-    int ret = isomorphism_vec.size();
-
-    std::vector< std::vector< std::vector<int> > > permutation_groups;
-    permutation_groups.clear();
-    for (const std::vector<int>& v : isomorphism_vec)
-        permutation_groups.push_back(calc_permutation_group(v, size));
-
-    ordered_pairs.clear();
-
-    // delete permutation group which contains 1 permutation with 2 elements and some permutation with 1 elements,
-    // and record the corresponding restriction.
-    for (unsigned int i = 0; i < permutation_groups.size(); )
-    {
-        int two_element_number = 0;
-        std::pair<int, int> found_pair;
-        for (const std::vector<int>& v : permutation_groups[i])
-            if (v.size() == 2)
-            {
-                ++two_element_number;
-                found_pair = std::pair<int ,int>(v[0], v[1]);
-            }
-            else if (v.size() != 1)
-            {
-                two_element_number = -1;
-                break;
-            }
-        if (two_element_number == 1)
-        {
-            permutation_groups.erase(permutation_groups.begin() + i);
-            isomorphism_vec.erase(isomorphism_vec.begin() + i);
-            ordered_pairs.push_back(found_pair);
-            assert(found_pair.first < found_pair.second);
-        }
-        else
-            ++i;
-    }
-
-    Pattern base_dag(size);
-    for (const std::pair<int, int>& pair : ordered_pairs)
-        base_dag.add_ordered_edge(pair.first, pair.second);
-
-    bool changed = true;
-    while (changed && isomorphism_vec.size() != 1)
-    {
-        // use restrictions to delete other isomophism
-        for (unsigned int i = 0; i < isomorphism_vec.size(); )
-        {
-            Pattern test_dag(base_dag);
-            const std::vector<int>& iso = isomorphism_vec[i];
-            for (const std::pair<int, int>& pair : ordered_pairs)
-                test_dag.add_ordered_edge(iso[pair.first], iso[pair.second]);
-            if (test_dag.is_dag() == false) // is not dag means conflict
-            {
-                permutation_groups.erase(permutation_groups.begin() + i);
-                isomorphism_vec.erase(isomorphism_vec.begin() + i);
-            }
-            else
-                ++i;
-        }
-
-        changed = false;
-        std::pair<int, int> found_pair;
-        for (unsigned int i = 0; i < permutation_groups.size(); )
-        {
-            int two_element_number = 0;
-            for (const std::vector<int>& v : permutation_groups[i])
-                if (v.size() == 2)
-                {
-                    ++two_element_number;
-                    found_pair = std::pair<int ,int>(v[0], v[1]);
-                    break;
-                }
-            if (two_element_number >= 1)
-            {
-                permutation_groups.erase(permutation_groups.begin() + i);
-                isomorphism_vec.erase(isomorphism_vec.begin() + i);
-                assert(found_pair.first < found_pair.second);
-                ordered_pairs.push_back(found_pair);
-                base_dag.add_ordered_edge(found_pair.first, found_pair.second);
-                changed = true;
-                break;
-            }
-            else
-                ++i;
-        }
-    }
-    assert(isomorphism_vec.size() == 1);
-    return ret;
 }
