@@ -14,6 +14,7 @@ public:
     // performance_modeling type = 0 : not use modeling
     //                      type = 1 : use our modeling
     //                      type = 2 : use GraphZero's modeling
+    Schedule(const int* _adj_mat, int _size);
     ~Schedule();
     inline int get_total_prefix_num() const { return total_prefix_num;}
     inline int get_father_prefix_id(int prefix_id) const { return father_prefix_id[prefix_id];}
@@ -27,12 +28,12 @@ public:
     inline int get_restrict_last(int i) const { return restrict_last[i];}
     inline int get_restrict_next(int i) const { return restrict_next[i];}
     inline int get_restrict_index(int i) const { return restrict_index[i];}
-    int get_max_degree();
-    int get_multiplicity();
+    int get_max_degree() const;
+    int get_multiplicity() const;
     void aggressive_optimize(std::vector< std::pair<int,int> >& ordered_pairs) const;
     void aggressive_optimize_get_all_pairs(std::vector< std::vector< std::pair<int,int> > >& ordered_pairs_vector);
     void aggressive_optimize_dfs(Pattern base_dag, std::vector< std::vector<int> > isomorphism_vec, std::vector< std::vector< std::vector<int> > > permutation_groups, std::vector< std::pair<int,int> > ordered_pairs, std::vector< std::vector< std::pair<int,int> > >& ordered_pairs_vector);
-    void restrict_generation(int v_cnt, int e_cnt, std::vector< std::pair<int,int> >& best_restricts);
+    void restrict_selection(int v_cnt, int e_cnt, std::vector< std::vector< std::pair<int,int> > > ordered_pairs_vector, std::vector< std::pair<int,int> >& best_restricts) const;
 
     void GraphZero_aggressive_optimize(std::vector< std::pair<int,int> >& ordered_pairs) const;
     void GraphZero_get_automorphisms(std::vector< std::vector<int> > &Aut) const;
@@ -44,7 +45,7 @@ public:
     //use principle of inclusion-exclusion to optimize
     void init_in_exclusion_optimize(int optimize_num);
 
-    void print_schedule();
+    void print_schedule() const;
 
     std::vector< std::vector< std::vector<int> > >in_exclusion_optimize_group;
     std::vector< int > in_exclusion_optimize_val;

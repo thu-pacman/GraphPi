@@ -26,7 +26,7 @@ TEST(pattern_matching_test, pattern_matching_patents_triangle) {
     printf("Load data success!\n");
     fflush(stdout);
     
-    Pattern pattern(PatternType::Hourglass);
+    Pattern pattern(PatternType::Rectangle);
 
     bool is_pattern_valid = false;
     int performance_modeling_type = 0;

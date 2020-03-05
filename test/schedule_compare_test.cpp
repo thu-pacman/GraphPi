@@ -26,11 +26,6 @@ void test_pattern(Graph* g, PatternType type) {
     Schedule schedule_gz(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
-    if( is_equal_adj_mat( schedule_our.get_adj_mat_ptr(), schedule_gz.get_adj_mat_ptr(), pattern.get_size())) {
-        printf("same schedule\n");
-        return;
-    }
-
     std::vector< std::pair<int,int> > gz_pairs;
     schedule_gz.GraphZero_aggressive_optimize(gz_pairs);
     schedule_gz.add_restrict(gz_pairs);

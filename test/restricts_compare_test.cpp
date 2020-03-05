@@ -4,6 +4,7 @@
 #include "../include/pattern.h"
 #include "../include/schedule.h"
 #include "../include/common.h"
+#include "../include/restricts_generator.h"
 
 #include <iostream>
 #include <string>
@@ -11,6 +12,8 @@
 
 void test_pattern(Graph* g, PatternType type) {
     Pattern pattern(type);
+    int thread_num = 24;
+    double t1,t2,t3,t4;
     
     printf("test pattern : ");
     PatternType_printer(type);
@@ -18,7 +21,7 @@ void test_pattern(Graph* g, PatternType type) {
     bool is_pattern_valid;
     int performance_modeling_type;
     
-    performance_modeling_type = 2;
+    performance_modeling_type = 1;
     Schedule schedule_our(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
@@ -30,20 +33,21 @@ void test_pattern(Graph* g, PatternType type) {
     schedule_gz.GraphZero_aggressive_optimize(gz_pairs);
     schedule_gz.add_restrict(gz_pairs);
 
+    std::vector< std::vector< std::pair<int,int> > >restricts;
+    restricts_generate(schedule_our, thread_num, restricts);
+    printf("res size = %d\n", restricts.size());
+
     std::vector< std::pair<int,int> > our_pairs;
-    schedule_our.restrict_generation(g->v_cnt, g->e_cnt, our_pairs);
+    schedule_our.restrict_selection(g->v_cnt, g->e_cnt, restricts, our_pairs);
     schedule_our.add_restrict(our_pairs);
-
-    int thread_num = 24;
-    double t1,t2,t3,t4;
-
-    t1 = get_wall_time();
-    long long ans_our = g->pattern_matching(schedule_our, thread_num);
-    t2 = get_wall_time();
-
+   
     t3 = get_wall_time();
     long long ans_gz = g->pattern_matching(schedule_gz, thread_num);
     t4 = get_wall_time();
+    
+    t1 = get_wall_time();
+    long long ans_our = g->pattern_matching(schedule_our, thread_num);
+    t2 = get_wall_time();
 
     printf("our ans: %lld time: %.6lf\n", ans_our, t2 - t1);
     schedule_our.print_schedule();

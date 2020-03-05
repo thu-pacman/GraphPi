@@ -82,6 +82,54 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
     build_loop_invariant();
 }
 
+Schedule::Schedule(const int* _adj_mat, int _size)
+{
+    size = _size;
+    adj_mat = new int[size * size];
+    
+    memcpy(adj_mat, _adj_mat, size * size * sizeof(int));
+
+    // The I-th loop consists of at most the intersection of i-1 VertexSet.
+    // So the max number of prefix = 0 + 1 + ... + size-1 = size * (size-1) / 2
+    int max_prefix_num = size * (size - 1) / 2;
+    father_prefix_id = new int[max_prefix_num];
+    last = new int[size];
+    next = new int[max_prefix_num];
+    loop_set_prefix_id = new int[size];
+    prefix = new Prefix[max_prefix_num];
+    restrict_last = new int[size];
+    restrict_next = new int[max_prefix_num];
+    restrict_index = new int[max_prefix_num];
+    memset(father_prefix_id, -1, max_prefix_num * sizeof(int));
+    memset(last, -1, size * sizeof(int));
+    memset(next, -1, max_prefix_num * sizeof(int));
+    memset(restrict_last, -1, size * sizeof(int));
+    memset(restrict_next, -1, max_prefix_num * sizeof(int));
+
+    total_prefix_num = 0;
+    total_restrict_num = 0;
+    in_exclusion_optimize_num = 0;
+    
+    // The I-th vertex must connect with at least one vertex from 0 to i-1.
+    for (int i = 1; i < size; ++i)
+    {
+        bool valid = false;
+        for (int j = 0; j < i; ++j)
+            if (adj_mat[INDEX(i, j, size)])
+            {
+                valid = true;
+                break;
+            }
+        if (valid == false)
+        {
+            printf("invalid schedule!\n");
+            assert(0);
+        }
+    }
+
+    build_loop_invariant();
+}
+
 Schedule::~Schedule()
 {
     delete[] adj_mat;
@@ -95,7 +143,7 @@ Schedule::~Schedule()
     delete[] restrict_index;
 }
 
-int Schedule::get_max_degree() {
+int Schedule::get_max_degree() const{
     int mx = 0;
     for(int i = 0; i < size; ++i) {
         int cnt = 0;
@@ -157,7 +205,7 @@ void Schedule::add_restrict(const std::vector< std::pair<int, int> >& restricts)
     }
 }
 
-int Schedule::get_multiplicity() {
+int Schedule::get_multiplicity() const{
     std::vector< std::vector<int> > isomorphism_vec = get_isomorphism_vec();
     return isomorphism_vec.size();
 }
@@ -723,7 +771,7 @@ void Schedule::get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, i
     }
 }
 
-void Schedule::print_schedule() {
+void Schedule::print_schedule() const{
     printf("Schedule:\n");
     for(int i = 0; i < size; ++i) {
         for(int j = 0; j < size; ++j)
@@ -840,13 +888,8 @@ void Schedule::GraphZero_performance_modeling(int* best_order, int v_cnt, int e_
     delete[] anti_p;
 }
 
-void Schedule::restrict_generation(int v_cnt, int e_cnt, std::vector< std::pair<int,int> > &best_restricts) {
-    std::vector< std::vector< std::pair<int,int> > > ordered_pairs_vector;
-    aggressive_optimize_get_all_pairs(ordered_pairs_vector);
+void Schedule::restrict_selection(int v_cnt, int e_cnt, std::vector< std::vector< std::pair<int,int> > > ordered_pairs_vector, std::vector< std::pair<int,int> > &best_restricts) const{
     
-    int* order;
-    int* rank;
-
     double* p_size;
     int max_degree = get_max_degree();
     p_size = new double[max_degree];
