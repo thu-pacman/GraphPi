@@ -9,6 +9,7 @@
 
 enum PatternType {
     Rectangle,
+    QG3,
     Pentagon,
     House,
     Hourglass,

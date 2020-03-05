@@ -42,6 +42,17 @@ Pattern::Pattern(PatternType type) {
         add_edge(2, 3);
         return;
     }
+    if( type == PatternType::QG3) {
+        size = 4;
+        adj_mat = new int[size * size];
+        memset(adj_mat, 0, size * size * sizeof(int));
+        add_edge(0, 1);
+        add_edge(0, 2);
+        add_edge(0, 3);
+        add_edge(1, 2);
+        add_edge(1, 3);
+        return;
+    }
     if( type == PatternType::Pentagon) {
         size = 5;
         adj_mat = new int[size * size];

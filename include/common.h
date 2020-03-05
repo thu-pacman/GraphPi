@@ -15,6 +15,9 @@ void PatternType_printer(PatternType type) {
     if(type == PatternType::Rectangle) {
         printf("Rectangle\n");
     }
+    if(type == PatternType::QG3) {
+        printf("QG3\n");
+    }
     if(type == PatternType::Pentagon) {
         printf("Pentagon\n");
     }

@@ -82,6 +82,7 @@ TEST(restricts_compare_test, restricts_compare_patents) {
     fflush(stdout);
 
     test_pattern(g, PatternType::Rectangle);
+    test_pattern(g, PatternType::QG3);
     test_pattern(g, PatternType::Pentagon);
     test_pattern(g, PatternType::House);
     test_pattern(g, PatternType::Hourglass);
