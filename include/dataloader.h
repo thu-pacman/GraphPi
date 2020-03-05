@@ -21,6 +21,7 @@ public:
         // oriented_type == 0 do nothing
         //               == 1 high degree first
         //               == 2 low degree first
+    bool load_data(Graph* &g, int clique_size);
 
 private:
     static bool cmp_pair(std::pair<int,int>a, std::pair<int,int>b);
