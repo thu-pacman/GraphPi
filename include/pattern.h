@@ -1,17 +1,29 @@
 #pragma once
 #include <set>
 #include <vector>
+#include <cstdio>
 
 #ifndef INDEX
 #define INDEX(x,y,n) ((x)*(n)+(y)) 
 #endif
 
+enum PatternType {
+    Rectangle,
+    Pentagon,
+    House,
+    Hourglass,
+    Cycle_6_Tri,
+    Clique_7_Minus
+};
+
+
 class Pattern
 {
 public:
-    Pattern(int _size);
+    Pattern(int _size, bool clique = false);
     ~Pattern();
     Pattern(const Pattern& p);
+    Pattern(PatternType type);
     void add_edge(int x, int y);
     void del_edge(int x, int y);
     inline void add_ordered_edge(int x, int y) { adj_mat[INDEX(x, y, size)] = 1;}
@@ -20,9 +32,6 @@ public:
     bool check_connected() const;
     void count_all_isomorphism(std::set< std::set<int> >& s) const;
     void print() const;
-    int aggresive_optimize(std::vector< std::pair<int, int> >& ordered_pairs) const;
-    static std::vector< std::vector<int> > calc_permutation_group(const std::vector<int> vec, int size);
-    std::vector< std::vector<int> > get_isomorphism_vec() const;
     bool is_dag() const;
 private:
     Pattern& operator =(const Pattern&);

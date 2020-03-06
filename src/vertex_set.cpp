@@ -28,6 +28,13 @@ void VertexSet::init(int input_size, int* input_data)
     allocate = false;
 }
 
+void VertexSet::copy(int input_size, int* input_data)
+{
+    init();
+    size = input_size;
+    for(int i = 0; i < input_size; ++i) data[i] = input_data[i];
+}
+
 VertexSet::~VertexSet()
 {
     if (allocate== true && data != nullptr)
@@ -93,6 +100,40 @@ void VertexSet::intersection(const VertexSet& set0, const VertexSet& set1, int m
                 ++j;
             }
         }
+}
+
+void VertexSet::intersection_with(const VertexSet& set1) {
+    const VertexSet& set0 = *this;
+    int i = 0;
+    int j = 0;
+    int size0 = set0.get_size();
+    int size1 = set1.get_size();
+
+    // TODO : Try more kinds of calculation.
+    // Like
+    // while (true)
+    //     ..., if (++i == size0) break;
+    //     ..., if (++j == size1) break;
+    //     ......
+    // Maybe we can also use binary search if one set is very small and another is large.
+    int data0 = set0.get_data(0);
+    int data1 = set1.get_data(0);
+    size = 0;
+    while (i < size0 && j < size1)
+    {
+        data0 = set0.get_data(i);
+        data1 = set1.get_data(j);
+        if (data0 < data1)
+            ++i;
+        else if (data0 > data1)
+            ++j;
+        else
+        {
+            push_back(data0);
+            ++i;
+            ++j;
+        }
+    }
 }
 
 void VertexSet::build_vertex_set(const Schedule& schedule, const VertexSet* vertex_set, int* input_data, int input_size, int prefix_id, int min_vertex, bool clique)

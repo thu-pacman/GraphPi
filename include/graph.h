@@ -10,7 +10,6 @@ public:
     int *edge; // edges
     int *vertex; // v_i's neighbor is in edge[ vertex[i], vertex[i+1]-1]
     
-
     Graph() {
         v_cnt = e_cnt = 0;
         edge = vertex = nullptr;
