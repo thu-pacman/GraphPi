@@ -43,5 +43,13 @@ if (GTEST_FOUND)
                         pthread
                         gomp)
     gtest_discover_tests(restricts_compare_test)
+    
+#    ADD_EXECUTABLE(performance_compare_test performance_compare_test.cpp)
+#    TARGET_LINK_LIBRARIES(performance_compare_test
+#                        ${GTEST_BOTH_LIBRARIES}
+#                        graph_mining
+#                        pthread
+#                        gomp)
+#    gtest_discover_tests(performance_compare_test)
 endif()
 

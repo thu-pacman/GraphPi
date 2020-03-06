@@ -4,7 +4,6 @@
 #include "../include/pattern.h"
 #include "../include/schedule.h"
 #include "../include/common.h"
-#include "../include/restricts_generator.h"
 
 #include <iostream>
 #include <string>
@@ -21,7 +20,7 @@ void test_pattern(Graph* g, PatternType type) {
     bool is_pattern_valid;
     int performance_modeling_type;
     
-    performance_modeling_type = 1;
+    performance_modeling_type = 2;
     Schedule schedule_our(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
@@ -34,7 +33,7 @@ void test_pattern(Graph* g, PatternType type) {
     schedule_gz.add_restrict(gz_pairs);
 
     std::vector< std::vector< std::pair<int,int> > >restricts;
-    restricts_generate(schedule_our, thread_num, restricts);
+    schedule_our.restricts_generate(schedule_our.get_adj_mat_ptr(), restricts);
     printf("res size = %d\n", restricts.size());
 
     std::vector< std::pair<int,int> > our_pairs;
@@ -81,13 +80,13 @@ TEST(restricts_compare_test, restricts_compare_patents) {
     printf("Load data success!\n");
     fflush(stdout);
 
-    test_pattern(g, PatternType::Rectangle);
-    test_pattern(g, PatternType::QG3);
-    test_pattern(g, PatternType::Pentagon);
-    test_pattern(g, PatternType::House);
-    test_pattern(g, PatternType::Hourglass);
+//    test_pattern(g, PatternType::Rectangle);
+//    test_pattern(g, PatternType::QG3);
+//    test_pattern(g, PatternType::Pentagon);
+//    test_pattern(g, PatternType::House);
+//    test_pattern(g, PatternType::Hourglass);
     test_pattern(g, PatternType::Cycle_6_Tri);
-    test_pattern(g, PatternType::Clique_7_Minus);
+//    test_pattern(g, PatternType::Clique_7_Minus);
 
     delete g;
 }

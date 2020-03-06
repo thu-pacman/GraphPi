@@ -34,6 +34,7 @@ public:
     void aggressive_optimize_get_all_pairs(std::vector< std::vector< std::pair<int,int> > >& ordered_pairs_vector);
     void aggressive_optimize_dfs(Pattern base_dag, std::vector< std::vector<int> > isomorphism_vec, std::vector< std::vector< std::vector<int> > > permutation_groups, std::vector< std::pair<int,int> > ordered_pairs, std::vector< std::vector< std::pair<int,int> > >& ordered_pairs_vector);
     void restrict_selection(int v_cnt, int e_cnt, std::vector< std::vector< std::pair<int,int> > > ordered_pairs_vector, std::vector< std::pair<int,int> >& best_restricts) const;
+    void restricts_generate(const int* cur_adj_mat, std::vector< std::vector< std::pair<int,int> > > &restricts);
 
     void GraphZero_aggressive_optimize(std::vector< std::pair<int,int> >& ordered_pairs) const;
     void GraphZero_get_automorphisms(std::vector< std::vector<int> > &Aut) const;

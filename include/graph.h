@@ -1,6 +1,7 @@
 #pragma once
 #include "schedule.h"
 #include "vertex_set.h"
+
 class Graph {
 public:
     int v_cnt; // number of vertex

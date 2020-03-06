@@ -1,4 +1,6 @@
 #include "../include/schedule.h"
+#include "../include/graph.h"
+#include "../include/dataloader.h"
 #include <cstdio>
 #include <cstring>
 #include <assert.h>
@@ -607,66 +609,68 @@ void Schedule::performance_modeling(int* best_order, int v_cnt, int e_cnt) {
             for(int j = 0; j < size; ++j)
                 cur_adj_mat[INDEX(rank[i], rank[j], size)] = adj_mat[INDEX(i, j, size)];
 
-        std::vector< std::pair<int,int> > restricts;
-        GraphZero_aggressive_optimize(restricts);
-        int restricts_size = restricts.size();
-        std::sort(restricts.begin(), restricts.end());
-        double* sum;
-        sum = new double[restricts_size];
-        for(int i = 0; i < restricts_size; ++i) sum[i] = 0;
-        int* tmp;
-        tmp = new int[size];
-        for(int i = 0; i < size; ++i) tmp[i] = i;
-        do {
+        std::vector< std::vector< std::pair<int,int> > > restricts_vector;
+        restricts_generate(cur_adj_mat, restricts_vector);
+        for(int restricts_rank = 0; restricts_rank < restricts_vector.size(); ++restricts_rank) {
+            std::vector< std::pair<int,int> >& restricts = restricts_vector[restricts_rank];
+            int restricts_size = restricts.size();
+            std::sort(restricts.begin(), restricts.end());
+            double* sum;
+            sum = new double[restricts_size];
+            for(int i = 0; i < restricts_size; ++i) sum[i] = 0;
+            int* tmp;
+            tmp = new int[size];
+            for(int i = 0; i < size; ++i) tmp[i] = i;
+            do {
+                for(int i = 0; i < restricts_size; ++i)
+                    if(tmp[restricts[i].first] > tmp[restricts[i].second]) {
+                        sum[i] += 1;
+                    }
+                    else break;
+            } while( std::next_permutation(tmp, tmp + size));
+            double total = 1;
+            for(int i = 2; i <= size; ++i) total *= i;
             for(int i = 0; i < restricts_size; ++i)
-                if(tmp[restricts[i].first] > tmp[restricts[i].second]) {
-                    sum[i] += 1;
-                }
-                else break;
-        } while( std::next_permutation(tmp, tmp + size));
-        double total = 1;
-        for(int i = 2; i <= size; ++i) total *= i;
-        for(int i = 0; i < restricts_size; ++i)
-            sum[i] = sum[i] /total;
-        for(int i = restricts_size - 1; i > 0; --i)
-            sum[i] /= sum[i - 1];
+                sum[i] = sum[i] /total;
+            for(int i = restricts_size - 1; i > 0; --i)
+                sum[i] /= sum[i - 1];
 
-        double val = 1;
-        for(int i = 0; i < size; ++i) invariant_size[i].clear();
-        for(int i = size - 1; i >= 0; --i) {
-            int cnt_forward = 0;
-            int cnt_backward = 0;
-            for(int j = 0; j < i; ++j)
-                if(cur_adj_mat[INDEX(j, i, size)])
-                    ++cnt_forward;
-            for(int j = i + 1; j < size; ++j)
-                if(cur_adj_mat[INDEX(j, i, size)])
-                    ++cnt_backward;
+            double val = 1;
+            for(int i = 0; i < size; ++i) invariant_size[i].clear();
+            for(int i = size - 1; i >= 0; --i) {
+                int cnt_forward = 0;
+                int cnt_backward = 0;
+                for(int j = 0; j < i; ++j)
+                    if(cur_adj_mat[INDEX(j, i, size)])
+                        ++cnt_forward;
+                for(int j = i + 1; j < size; ++j)
+                    if(cur_adj_mat[INDEX(j, i, size)])
+                        ++cnt_backward;
 
-            int c = cnt_forward;
-            for(int j = i - 1; j >= 0; --j)
-                if(cur_adj_mat[INDEX(j, i, size)])
-                    invariant_size[j].push_back(c--);
+                int c = cnt_forward;
+                for(int j = i - 1; j >= 0; --j)
+                    if(cur_adj_mat[INDEX(j, i, size)])
+                        invariant_size[j].push_back(c--);
 
-            for(int j = 0; j < invariant_size[i].size(); ++j)
-                if(invariant_size[i][j] > 1) 
-                    val += p_size[invariant_size[i][j] - 1] + p_size[1];
-            for(int j = 0; j < restricts_size; ++j)
-                if(restricts[j].second == i)
-                    val *=  sum[j];
-            val *= p_size[cnt_forward];
-        
+                for(int j = 0; j < invariant_size[i].size(); ++j)
+                    if(invariant_size[i][j] > 1) 
+                        val += p_size[invariant_size[i][j] - 1] + p_size[1];
+                for(int j = 0; j < restricts_size; ++j)
+                    if(restricts[j].second == i)
+                        val *=  sum[j];
+                val *= p_size[cnt_forward];
+
+            }
+            if( have_best == false || val < min_val) {
+                have_best = true;
+                for(int i = 0; i < size; ++i)
+                    best_order[i] = order[i];
+                min_val = val;
+            }
+            delete[] sum;
+            delete[] tmp;
         }
-        if( have_best == false || val < min_val) {
-            have_best = true;
-            for(int i = 0; i < size; ++i)
-                best_order[i] = order[i];
-            min_val = val;
-        }
-        
         delete[] cur_adj_mat;
-        delete[] sum;
-        delete[] tmp;
 
     } while( std::next_permutation(order, order + size) );
 
@@ -687,10 +691,10 @@ void Schedule::init_in_exclusion_optimize(int optimize_num) {
     for(int n = 1; n <= optimize_num; ++n) {
         DisjointSetUnion dsu(n);
         int m = n * (n - 1) / 2;
-        
+
         in_exclusion_val[ 2 * n - 2 ] = 0;
         in_exclusion_val[ 2 * n - 1 ] = 0;
-        
+
         if( n == 1) {
             ++in_exclusion_val[0];
             continue;
@@ -701,7 +705,7 @@ void Schedule::init_in_exclusion_optimize(int optimize_num) {
         for(int i = 0; i < n; ++i)
             for(int j = 0; j < i; ++j)
                 edge[e_cnt++] = std::make_pair(i,j);
-        
+
         for(int s = 0; s < (1<<m); ++s) {
             dsu.init();
             int bit_cnt = 0;
@@ -974,4 +978,29 @@ void Schedule::restrict_selection(int v_cnt, int e_cnt, std::vector< std::vector
 
     delete[] p_size;
     assert(have_best);
+}
+
+void Schedule::restricts_generate(const int* cur_adj_mat, std::vector< std::vector< std::pair<int,int> > > &restricts) {
+    Schedule schedule(cur_adj_mat, get_size());
+    schedule.aggressive_optimize_get_all_pairs(restricts);
+    int size = schedule.get_size();
+    Graph* complete;
+    DataLoader* D = new DataLoader();
+    assert(D->load_data(complete, size + 1));
+    long long ans = complete->pattern_matching( schedule, 1) / schedule.get_multiplicity();
+    int thread_num = 1;
+    for(int i = 0; i < restricts.size(); ) {
+        Schedule cur_schedule(schedule.get_adj_mat_ptr(), schedule.get_size());
+        cur_schedule.add_restrict(restricts[i]);
+        long long cur_ans = complete->pattern_matching( cur_schedule, thread_num);
+        if( cur_ans != ans) {
+            restricts.erase(restricts.begin() + i);
+        }
+        else {
+            ++i;
+        }
+    }
+
+    delete complete;
+    delete D;
 }
