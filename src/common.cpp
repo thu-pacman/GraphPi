@@ -1,16 +1,18 @@
-#pragma once
+#include "common.h"
 #include <sys/time.h>
 #include <cstdlib>
-#include "pattern.h"
 
-double get_wall_time(); 
+double get_wall_time() {
+    struct timeval time;
+    if(gettimeofday(&time,NULL)) {
+        return 0;
+    }
+    return (double)time.tv_sec + (double)time.tv_usec * 0.000001;
+}
 
 void PatternType_printer(PatternType type) {
     if(type == PatternType::Rectangle) {
         printf("Rectangle\n");
-    }
-    if(type == PatternType::QG3) {
-        printf("QG3\n");
     }
     if(type == PatternType::Pentagon) {
         printf("Pentagon\n");
@@ -29,6 +31,10 @@ void PatternType_printer(PatternType type) {
     }
 }
 
-void PatternType_printer(PatternType type);
-
-bool is_equal_adj_mat(const int* adj_mat1, const int* adj_mat2, int size);
+bool is_equal_adj_mat(const int* adj_mat1, const int* adj_mat2, int size) {
+    for(int i = 0; i < size; ++i)
+        for(int j = 0; j < size; ++j)
+            if(adj_mat1[INDEX(i,j,size)] != adj_mat2[INDEX(i,j,size)]) 
+                return false;
+    return true;
+}

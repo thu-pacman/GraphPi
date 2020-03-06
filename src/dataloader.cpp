@@ -125,7 +125,6 @@ bool DataLoader::load_data(Graph* &g, int clique_size) {
     g->e_cnt *= 2;
     std::pair<int,int> *e = new std::pair<int,int>[g->e_cnt];
     id.clear();
-    int x,y;
     int tmp_v,tmp_e;
     tmp_v = 0;
     tmp_e = 0;
