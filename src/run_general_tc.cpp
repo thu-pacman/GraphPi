@@ -47,7 +47,8 @@ int main(int argc,char *argv[])
     tc_pattern.add_edge(0, 1);
     tc_pattern.add_edge(0, 2);
     tc_pattern.add_edge(1, 2);
-    Schedule tc_schedule(tc_pattern);
+    bool is_pattern_valid;
+    Schedule tc_schedule(tc_pattern, is_pattern_valid, 0, g->v_cnt, g->e_cnt);
 
     int thread_num = atoi(argv[2]);
     double t1 = get_wall_time();

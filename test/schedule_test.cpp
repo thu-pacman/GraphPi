@@ -109,9 +109,10 @@ TEST(aggressive_optimize_test, aggre_ssive_optimize)
     p.add_edge(3, 4);
     p.add_edge(4, 1);*/
     std::vector < std::pair<int, int> > pairs;
-    Schedule schedule(p);
+    bool is_pattern_valid;
+    Schedule schedule(p, is_pattern_valid, 0, g->v_cnt, g->e_cnt);
     int thread_count = 24;
-    p.aggresive_optimize(pairs); // check if the isomorphism_vec size can be deleted to 1 by restriction.("assert(isomorphism_vec.size() == 1);")
+    schedule.aggressive_optimize(pairs); // check if the isomorphism_vec size can be deleted to 1 by restriction.("assert(isomorphism_vec.size() == 1);")
     schedule.add_restrict(pairs);
     /*{
         double t1 = get_wall_time();
