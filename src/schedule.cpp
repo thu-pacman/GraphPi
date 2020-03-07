@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <algorithm>
 
-Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, int v_cnt, int e_cnt)
+Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, bool use_in_exclusion_optimize ,int v_cnt, int e_cnt)
 {
     is_pattern_valid = true;
     size = pattern.get_size();
@@ -21,15 +21,54 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
     //Finally, we use best_order[] to relocate adj_mat
     if( performance_modeling_type != 0) {
 
+        
+
         const int* pattern_adj_mat = pattern.get_adj_mat_ptr();
         int *best_order;
         best_order = new int[size];
 
         if( performance_modeling_type == 1) {
-            performance_modeling(best_order, v_cnt, e_cnt);
+            std::vector< std::vector<int> > candidate_permutations;
+
+            unsigned int pow = 1;
+            for (int i = 2; i <= size; ++i)
+                pow *= i;
+            candidate_permutations.clear();
+            bool use[size];
+            for (int i = 0; i < size; ++i)
+                use[i] = false;
+            std::vector<int> tmp_vec;
+            get_full_permutation(candidate_permutations, use, tmp_vec, 0);
+            assert(candidate_permutations.size() == pow);
+
+            if(use_in_exclusion_optimize == true) {
+                // select candidates
+                in_exclusion_optimize_num = 0;
+                for(const std::vector<int> &vec : candidate_permutations) {
+                    in_exclusion_optimize_num = std::max(in_exclusion_optimize_num, get_vec_optimize_num(vec));
+                }
+                std::vector< std::vector<int> > tmp;
+                tmp.clear();
+                for(const std::vector<int> &vec : candidate_permutations) 
+                    if( in_exclusion_optimize_num == get_vec_optimize_num(vec)) {
+                        tmp.push_back(vec);
+                    }
+
+                if(in_exclusion_optimize_num > 1) {
+                    candidate_permutations = tmp;
+                    init_in_exclusion_optimize();
+                }
+                else {
+                 // in_exclusion_optimize_num == 1 is meaningless
+                    in_exclusion_optimize_num = 0;
+                }
+            }
+
+            performance_modeling(best_order, candidate_permutations, v_cnt, e_cnt);
         }
         else {
             GraphZero_performance_modeling(best_order, v_cnt, e_cnt);
+            in_exclusion_optimize_num = 0;
         }
         int *rank;
         rank = new int[size];
@@ -40,6 +79,9 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
                 adj_mat[INDEX(rank[i], rank[j], size)] = pattern_adj_mat[INDEX(i, j, size)]; 
         delete[] rank;
         delete[] best_order;
+    }
+    else {
+        in_exclusion_optimize_num = 0;
     }
 
     // The I-th loop consists of at most the intersection of i-1 VertexSet.
@@ -61,8 +103,7 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
 
     total_prefix_num = 0;
     total_restrict_num = 0;
-    in_exclusion_optimize_num = 0;
-    
+
     // The I-th vertex must connect with at least one vertex from 0 to i-1.
     for (int i = 1; i < size; ++i)
     {
@@ -88,7 +129,7 @@ Schedule::Schedule(const int* _adj_mat, int _size)
 {
     size = _size;
     adj_mat = new int[size * size];
-    
+
     memcpy(adj_mat, _adj_mat, size * size * sizeof(int));
 
     // The I-th loop consists of at most the intersection of i-1 VertexSet.
@@ -111,7 +152,7 @@ Schedule::Schedule(const int* _adj_mat, int _size)
     total_prefix_num = 0;
     total_restrict_num = 0;
     in_exclusion_optimize_num = 0;
-    
+
     // The I-th vertex must connect with at least one vertex from 0 to i-1.
     for (int i = 1; i < size; ++i)
     {
@@ -563,7 +604,7 @@ std::vector< std::vector<int> > Schedule::calc_permutation_group(const std::vect
     return res;
 }
 
-void Schedule::performance_modeling(int* best_order, int v_cnt, int e_cnt) {
+void Schedule::performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, int e_cnt) {
     int* order;
     int* rank;
 
@@ -581,11 +622,12 @@ void Schedule::performance_modeling(int* best_order, int v_cnt, int e_cnt) {
     order = new int[size];
     rank = new int[size];
     
-    for(int i = 0; i < size; ++i) order[i] = i;
     double min_val;
     bool have_best = false;
     std::vector<int> invariant_size[size];
-    do {
+    for(const std::vector<int>& vec : candidates) {
+        for(int i = 0; i < size; ++i)
+            order[i] = vec[i];
         // check whether it is valid schedule
         bool is_valid = true;
         for(int i = 1; i < size; ++i) {
@@ -672,15 +714,17 @@ void Schedule::performance_modeling(int* best_order, int v_cnt, int e_cnt) {
         }
         delete[] cur_adj_mat;
 
-    } while( std::next_permutation(order, order + size) );
+    }
 
     delete[] order;
     delete[] rank;
     delete[] p_size;
 }
 
-void Schedule::init_in_exclusion_optimize(int optimize_num) {
-    in_exclusion_optimize_num = optimize_num;
+void Schedule::init_in_exclusion_optimize() {
+    int optimize_num = in_exclusion_optimize_num;
+    
+    assert( in_exclusion_optimize_num > 1);
 
     int* id;
     id = new int[ optimize_num ];
@@ -1003,4 +1047,33 @@ void Schedule::restricts_generate(const int* cur_adj_mat, std::vector< std::vect
 
     delete complete;
     delete D;
+}
+
+int Schedule::get_vec_optimize_num(const std::vector<int> &vec) {
+    bool is_valid = true;
+    for(int i = 1; i < size; ++i) {
+        bool have_edge = false;
+        for(int j = 0; j < i; ++j)
+            if( adj_mat[INDEX(vec[i], vec[j], size)]) {
+                have_edge = true;
+                break;
+            }
+        if( have_edge == false) {
+            is_valid = false;
+            break;
+        }
+    }
+    if( !is_valid) return -1;
+
+    for(int k = 2; k < size; ++k) {
+        bool flag = true;
+        for(int i = size - k + 1; i < size; ++i)
+            if(adj_mat[INDEX(vec[size - k], vec[i], size)]) {
+                flag = false;
+                break;
+            }
+        if(flag == false) return k - 1;
+    }
+    assert(0);
+    return -1;
 }

@@ -9,7 +9,7 @@
 #include <string>
 #include <algorithm>
 
-TEST(pattern_matching_test, pattern_matching_patents_triangle) {
+TEST(pattern_matching_test, pattern_matching_patents_Cycle6Tri) {
     Graph *g;
     DataLoader D;
     
@@ -26,11 +26,12 @@ TEST(pattern_matching_test, pattern_matching_patents_triangle) {
     printf("Load data success!\n");
     fflush(stdout);
     
-    Pattern pattern(PatternType::Rectangle);
+    Pattern pattern(PatternType::Cycle_6_Tri);
 
     bool is_pattern_valid = false;
     int performance_modeling_type = 0;
-    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
+    bool use_in_exclusion_optimize = false;
+    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     std::vector< std::pair<int,int> > pairs;

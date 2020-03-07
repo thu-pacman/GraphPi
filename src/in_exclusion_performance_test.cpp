@@ -18,19 +18,15 @@ void test_pattern(Graph* g, Pattern &pattern) {
     int performance_modeling_type;
     bool use_in_exclusion_optimize;
     
-    double t5 = get_wall_time();
     performance_modeling_type = 1;
-    use_in_exclusion_optimize = false;
+    use_in_exclusion_optimize = true;
     Schedule schedule_our(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
     assert(is_pattern_valid==true);
-    double t6 = get_wall_time();
 
-    double t7 = get_wall_time();
     performance_modeling_type = 2;
     use_in_exclusion_optimize = false;
     Schedule schedule_gz(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
     assert(is_pattern_valid==true);
-    double t8 = get_wall_time();
 
     std::vector< std::pair<int,int> > gz_pairs;
     schedule_gz.GraphZero_aggressive_optimize(gz_pairs);
@@ -48,21 +44,22 @@ void test_pattern(Graph* g, Pattern &pattern) {
         long long ans_our = g->pattern_matching(schedule_our, thread_num);
         t2 = get_wall_time();
 
-        printf("our ans: %lld perf_time: %.6lf time: %.6lf\n", ans_our, t6 - t5, t2 - t1);
+        printf("our ans: %lld time: %.6lf\n", ans_our, t2 - t1);
         if(i == 2) {
             schedule_our.print_schedule();
             for(int i = 0; i < our_pairs.size(); ++i)
                 printf("(%d,%d)",our_pairs[i].first, our_pairs[i].second);
             puts("");
         }
+        fflush(stdout);
     }
-
+/*
     for(int i = 0; i < 3; ++i) {
         t3 = get_wall_time();
         long long ans_gz = g->pattern_matching(schedule_gz, thread_num);
         t4 = get_wall_time();
 
-        printf("GZ  ans: %lld perf_time: %.6lf time: %.6lf\n", ans_gz, t8 - t7, t4 - t3);
+        printf("GZ  ans: %lld time: %.6lf\n", ans_gz, t4 - t3);
         if(i == 2) {
             schedule_gz.print_schedule();
             for(int i = 0; i < gz_pairs.size(); ++i)
@@ -70,7 +67,7 @@ void test_pattern(Graph* g, Pattern &pattern) {
             puts("");
             fflush(stdout);
         }
-    }
+    }*/
 }
 
 int main(int argc,char *argv[]) {
@@ -89,6 +86,8 @@ int main(int argc,char *argv[]) {
 
     printf("Load data success!\n");
     fflush(stdout);
+    Pattern pattern(PatternType::Cycle_6_Tri);
+    test_pattern(g, pattern);
     /*
        test_pattern(g, PatternType::Rectangle);
        test_pattern(g, PatternType::QG3);
@@ -98,7 +97,7 @@ int main(int argc,char *argv[]) {
        test_pattern(g, PatternType::Cycle_6_Tri);
        test_pattern(g, PatternType::Clique_7_Minus);
      */
-
+/*
     for(int size = 3; size < 7; ++size) {
         MotifGenerator mg(size);
         std::vector<Pattern> patterns = mg.generate();
@@ -106,6 +105,6 @@ int main(int argc,char *argv[]) {
             test_pattern(g, p);
         }
     }
-
+*/
     delete g;
 }

@@ -30,7 +30,8 @@ TEST(performance_modeling_test, performance_modeling_patents_qg3) {
 
     bool is_pattern_valid = false;
     int performance_modeling_type = 1;
-    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
+    bool use_in_exclusion_optimize = false;
+    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     printf("performance modeling adj_mat\n");

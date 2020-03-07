@@ -10,10 +10,11 @@ class Schedule
 {
 public:
     //TODO : more kinds of constructors to construct different Schedules from one Pattern
-    Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, int v_cnt, int e_cnt);
+    Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, bool use_in_exclusion_optimize, int v_cnt, int e_cnt);
     // performance_modeling type = 0 : not use modeling
     //                      type = 1 : use our modeling
     //                      type = 2 : use GraphZero's modeling
+    //when performance_modeling_type == 1 , we can additonally use in-exclusion optimize by set use_in_exclusion_optimize = 1
     Schedule(const int* _adj_mat, int _size);
     ~Schedule();
     inline int get_total_prefix_num() const { return total_prefix_num;}
@@ -43,8 +44,6 @@ public:
     static std::vector< std::vector<int> > calc_permutation_group(const std::vector<int> vec, int size);
     inline const int* get_adj_mat_ptr() const {return adj_mat;}
     
-    //use principle of inclusion-exclusion to optimize
-    void init_in_exclusion_optimize(int optimize_num);
 
     void print_schedule() const;
 
@@ -68,7 +67,12 @@ private:
     void build_loop_invariant();
     int find_father_prefix(int data_size, const int* data);
     void get_full_permutation(std::vector< std::vector<int> >& vec, bool use[], std::vector<int> tmp_vec, int depth) const;
-    void performance_modeling(int* best_order, int v_cnt, int e_cnt);
+    void performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, int e_cnt);
     void GraphZero_performance_modeling(int* best_order, int v_cnt, int e_cnt);
     void get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, int* in_exclusion_val);
+    
+    //use principle of inclusion-exclusion to optimize
+    void init_in_exclusion_optimize();
+    
+    int get_vec_optimize_num(const std::vector<int> &vec);
 };
