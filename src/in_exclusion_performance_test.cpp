@@ -53,7 +53,7 @@ void test_pattern(Graph* g, Pattern &pattern) {
         }
         fflush(stdout);
     }
-/*
+
     for(int i = 0; i < 3; ++i) {
         t3 = get_wall_time();
         long long ans_gz = g->pattern_matching(schedule_gz, thread_num);
@@ -67,7 +67,7 @@ void test_pattern(Graph* g, Pattern &pattern) {
             puts("");
             fflush(stdout);
         }
-    }*/
+    }
 }
 
 int main(int argc,char *argv[]) {
@@ -86,7 +86,16 @@ int main(int argc,char *argv[]) {
 
     printf("Load data success!\n");
     fflush(stdout);
-    Pattern pattern(PatternType::Cycle_6_Tri);
+    Pattern pattern(6);
+    pattern.add_edge(0, 1);
+    pattern.add_edge(0, 2);
+    pattern.add_edge(0, 3);
+    pattern.add_edge(1, 2);
+    pattern.add_edge(1, 3);
+    pattern.add_edge(2, 4);
+    pattern.add_edge(2, 5);
+    pattern.add_edge(3, 4);
+    pattern.add_edge(3, 5);
     test_pattern(g, pattern);
     /*
        test_pattern(g, PatternType::Rectangle);

@@ -1,0 +1,2 @@
+ADD_EXECUTABLE(all_schedule_test all_schedule_test.cpp)
+TARGET_LINK_LIBRARIES(all_schedule_test graph_mining)
