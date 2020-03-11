@@ -22,9 +22,9 @@ std::pair<int, int> Graphmpi::init(int _threadcnt, Graph* _graph, int schedulesi
     MPI_Barrier(MPI_COMM_WORLD);
     starttime = get_wall_time();
     blocksize = (graph->v_cnt + comm_sz - 1) / comm_sz;
-    chunksize = max(graph->e_cnt / threadcnt / comm_sz / schedulesize / chunk_divide_const, 1);
-    int k = comm_sz - my_rank - 1;
-    /*global_vertex = mynodel = blocksize * k;
+    chunksize = std::max(graph->e_cnt / threadcnt / comm_sz / schedulesize / chunk_divide_const, 1);
+    /*int k = comm_sz - my_rank - 1;
+    global_vertex = mynodel = blocksize * k;
     mynoder = k < comm_sz - 1 ? blocksize * (k + 1) : graph->v_cnt;*/
     if (my_rank) {
         global_vertex = mynodel = mynoder = 0;
@@ -54,10 +54,21 @@ long long Graphmpi::runmajor() {
         send[2] = edgel;
         if (global_vertex < mynoder && edgel + chunksize >= edger) {
             send[3] = edger;
-            global_vertex++;
-            if (global_vertex < mynoder) get_edge_index(global_vertex, edgel, edger);
+            send[4] = 0;
+            int sum = edger - edgel;
+            for (global_vertex++; global_vertex < mynoder; global_vertex++) {
+                graph->get_edge_index(global_vertex, edgel, edger);
+                if (edger - edgel + sum > chunksize) break;
+                sum += edger - edgel;
+                send[4]++;
+            }
+            send[5] = edgel;
+            send[6] = edgel += chunksize - sum;
         }
-        else send[3] = edgel += chunksize;
+        else {
+            send[3] = edgel += chunksize;
+            send[4] = -1;
+        }
     };
     for (;;) {
         int testflag = 0;
@@ -88,7 +99,7 @@ long long Graphmpi::runmajor() {
             }
             else */if (recv[0] == IDLE) {
                 next_edge_range();
-                MPI_Isend(send, 3, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD, &sendrqst);
+                MPI_Isend(send, 7, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD, &sendrqst);
             }
             else if (recv[0] == END) {
                 tot_ans = (((long long)(recv[1]) << 32) | (unsigned)recv[2]);
@@ -99,8 +110,7 @@ long long Graphmpi::runmajor() {
                 break;
             }
             else if (recv[0] == OVERWORK) {
-                vertex[workq.front()] = recv[1];
-                edge_range[tmpthread] = std::make_pair(recv[2], recv[3]);
+                memcpy(data[workq.front()], recv, 7 * sizeof(recv[0]));
                 lock[workq.front()].clear();
                 workq.pop();
             }
@@ -140,8 +150,7 @@ long long Graphmpi::runmajor() {
             }
             else {
                 next_edge_range();
-                vertex[tmpthread] = send[1];
-                edge_range[tmpthread] = std::make_pair(send[2], send[3]);
+                memcpy(data[tmpthread], send, 7 * sizeof(send[0]));
                 lock[tmpthread].clear();
             }
         }
@@ -197,12 +206,12 @@ Graphmpi::~Graphmpi() {
     MPI_Finalize();
 }
 
-std::pair<int, std::pair<int, int> > Graphmpi::get_edge_range() {
+int* Graphmpi::get_edge_range() {
     int thread_num = omp_get_thread_num();
 #pragma omp critical
     idleq.push(thread_num);
     for (;lock[thread_num].test_and_set(););
-    return std::make_pair(vertex[thread_num], edge_range[thread_num]);
+    return data[thread_num][1] == -1 ? nullptr : data[thread_num];
 }
 
 void Graphmpi::report(long long local_ans) {
@@ -213,5 +222,17 @@ void Graphmpi::report(long long local_ans) {
 }
 
 void Graphmpi::end() {
-    printf("node = %d, thread = %d, time = %f\n", my_rank, omp_get_thread_num(), get_wall_time() - starttime);
+    printf("node = %d, thread = %d, time = %f, chunksize = %d\n", my_rank, omp_get_thread_num(), get_wall_time() - starttime, chunksize);
+}
+
+void Graphmpi::set_loop(int _loop_size, int *_loop_data_ptr) {
+    loop_flag = true;
+    loop_size[omp_get_thread_num()] = _loop_size;
+    loop_data_ptr[omp_get_thread_num()] = _loop_data_ptr;
+}
+
+void Graphmpi::get_loop(int &_loop_size, int *&_loop_data_ptr) {
+    if (!loop_flag) return;
+    _loop_size = loop_size[omp_get_thread_num()];
+    _loop_data_ptr = loop_data_ptr[omp_get_thread_num()];
 }

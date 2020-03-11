@@ -11,14 +11,17 @@ public:
     int* getneighbor(int u); // return a int[] end with a -1
     int getdegree(); // this function can only be called immediately after calling getneighbor
     bool include(int u); // return whether u is in this process
-    std::pair<int, std::pair<int, int> > get_edge_range();
+    int* get_edge_range();
     void report(long long local_ans);
     void end();
+    void set_loop(int _loop_size, int *_loop_data_ptr);
+    void get_loop(int &_loop_size, int *&_loop_data_ptr);
 
 private:
     static const int MAXN = 1 << 22, MAXTHREAD = 24, chunk_divide_const = 50;
     Graph* graph;
-    int comm_sz, my_rank, mynodel, mynoder, blocksize, idlethreadcnt, threadcnt, global_vertex, vertex[MAXTHREAD], chunksize;
+    int comm_sz, my_rank, mynodel, mynoder, blocksize, idlethreadcnt, threadcnt, global_vertex, vertex[MAXTHREAD], chunksize, loop_size[MAXTHREAD], *loop_data_ptr[MAXTHREAD];
+    bool loop_flag = false;
     long long node_ans = 0;
     double starttime;
     std::queue<int> requestq, idleq;

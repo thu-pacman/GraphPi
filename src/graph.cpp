@@ -231,7 +231,6 @@ void Graph::pattern_matching_func(const Schedule& schedule, VertexSet* vertex_se
 
 long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bool clique)
 {
-    int pattern_size = schedule.get_size(); 
     long long global_ans = 0;
 #pragma omp parallel num_threads(thread_count) reduction(+: global_ans)
     {
@@ -275,6 +274,7 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
         return;
 
     int* loop_data_ptr = vertex_set[loop_set_prefix_id].get_data_ptr();
+    if (depth == 1) Graphmpi::getinstance().get_loop(loop_size, loop_data_ptr);//bx2k: load balance on edge
 /*
     //Case: in_exclusion_optimize_num = 2
     if (depth == schedule.get_size() - 2) { 
@@ -415,6 +415,7 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
 
 long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count, bool clique)
 {
+    int pattern_size = schedule.get_size(); 
     Graphmpi &gm = Graphmpi::getinstance();
     long long global_ans = 0;
 #pragma omp parallel num_threads(thread_count)
@@ -434,18 +435,28 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
             VertexSet subtraction_set;
             subtraction_set.init();
             auto match_start_vertex = [&](int vertex, int *data, int size) {
+                int l, r;
+                get_edge_index(vertex, l, r);
+                gm.set_loop(size, data);
                 for (int prefix_id = schedule.get_last(0); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
                 {
-                    vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, data, size, prefix_id);
+                    vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, edge + l, r - l, prefix_id);
                 }
                 //subtraction_set.insert_ans_sort(vertex);
                 subtraction_set.push_back(vertex);
                 pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, 1);
                 subtraction_set.pop_back();
             };
-            for (std::pair<int, std::pair<int, int> > range;
-                (range = gm.get_edge_range()).first != -1;
-                match_start_vertex(range.first, graph->edge + range.second.first, range.second.second - rage.second.first));
+            for (int *recv; recv = gm.get_edge_range();) {
+                match_start_vertex(recv[1], edge + recv[2], recv[3] - recv[2]);
+                if (recv[4] == -1) continue;
+                for (int i = 1; i <= recv[4]; i++) {
+                    int l, r;
+                    get_edge_index(recv[1] + i, l, r);
+                    match_start_vertex(recv[1] + i, edge + l, r - l);
+                }
+                if (recv[1] + recv[4] + 1 < v_cnt) match_start_vertex(recv[1] + recv[4] + 1, edge + recv[5], recv[6] - recv[5]);
+            }
             delete[] vertex_set;
             gm.report(local_ans);
             gm.end();
