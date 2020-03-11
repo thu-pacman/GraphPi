@@ -421,7 +421,7 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
     {
 #pragma omp master
         {
-            gm.init(thread_count, this);
+            gm.init(thread_count, this, schedule.get_size());
         }
 #pragma omp barrier //mynodel have to be calculated before running other threads
 #pragma omp master
@@ -443,16 +443,9 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
                 pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, 1);
                 subtraction_set.pop_back();
             };
-            for (std::pair<int, int> range;;)
-            {
-                if ((range = gm.get_vertex_range()).first == -1) break;
-                //for (int vertex = v_cnt - range.second; vertex < v_cnt - range.first; vertex++) {//backwards slower than forwards
-                for (int vertex = range.first; vertex < range.second; vertex++) {
-                    int l, r;
-                    get_edge_index(vertex, l, r);
-                    match_start_vertex(vertex, edge + l, r - l);
-                }
-            }
+            for (std::pair<int, std::pair<int, int> > range;
+                (range = gm.get_edge_range()).first != -1;
+                match_start_vertex(range.first, graph->edge + range.second.first, range.second.second - rage.second.first));
             delete[] vertex_set;
             gm.report(local_ans);
             gm.end();

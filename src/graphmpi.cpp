@@ -12,7 +12,7 @@ Graphmpi& Graphmpi::getinstance() {
     return gm;
 }
 
-std::pair<int, int> Graphmpi::init(int _threadcnt, Graph* _graph) {
+std::pair<int, int> Graphmpi::init(int _threadcnt, Graph* _graph, int schedulesize) {
     threadcnt = _threadcnt;
     graph = _graph;
     int provided;
@@ -22,6 +22,7 @@ std::pair<int, int> Graphmpi::init(int _threadcnt, Graph* _graph) {
     MPI_Barrier(MPI_COMM_WORLD);
     starttime = get_wall_time();
     blocksize = (graph->v_cnt + comm_sz - 1) / comm_sz;
+    chunksize = max(graph->e_cnt / threadcnt / comm_sz / schedulesize / chunk_divide_const, 1);
     int k = comm_sz - my_rank - 1;
     /*global_vertex = mynodel = blocksize * k;
     mynoder = k < comm_sz - 1 ? blocksize * (k + 1) : graph->v_cnt;*/
@@ -34,7 +35,6 @@ std::pair<int, int> Graphmpi::init(int _threadcnt, Graph* _graph) {
     }
     idlethreadcnt = 0;
     for (int i = 0; i < MAXTHREAD; i++) lock[i].test_and_set();
-    global_vertex_lock.clear();
     return std::make_pair(mynodel, mynoder);
 }
 
@@ -45,8 +45,20 @@ long long Graphmpi::runmajor() {
     MPI_Request sendrqst, recvrqst;
     MPI_Status status;
     MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
-    int idlenodecnt = 0;
+    int idlenodecnt = 0, edgel, edger;
     std::queue<int> workq;
+    graph->get_edge_index(0, edgel, edger);
+    auto next_edge_range = [&]() {
+        send[0] = OVERWORK;
+        send[1] = global_vertex == mynoder ? -1 : global_vertex;
+        send[2] = edgel;
+        if (global_vertex < mynoder && edgel + chunksize >= edger) {
+            send[3] = edger;
+            global_vertex++;
+            if (global_vertex < mynoder) get_edge_index(global_vertex, edgel, edger);
+        }
+        else send[3] = edgel += chunksize;
+    };
     for (;;) {
         int testflag = 0;
         MPI_Test(&recvrqst, &testflag, &status);
@@ -75,13 +87,7 @@ long long Graphmpi::runmajor() {
                 waitforans = false;
             }
             else */if (recv[0] == IDLE) {
-                for (;global_vertex_lock.test_and_set(););
-                bool overworkflag = global_vertex + chunksize < mynoder;
-                int tmpvertex = global_vertex;
-                if (overworkflag) global_vertex += chunksize;
-                global_vertex_lock.clear();
-                send[0] = OVERWORK;
-                send[1] = overworkflag ? tmpvertex : -1;
+                next_edge_range();
                 MPI_Isend(send, 3, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD, &sendrqst);
             }
             else if (recv[0] == END) {
@@ -94,6 +100,7 @@ long long Graphmpi::runmajor() {
             }
             else if (recv[0] == OVERWORK) {
                 vertex[workq.front()] = recv[1];
+                edge_range[tmpthread] = std::make_pair(recv[2], recv[3]);
                 lock[workq.front()].clear();
                 workq.pop();
             }
@@ -126,9 +133,17 @@ long long Graphmpi::runmajor() {
             }
         }
         if (idleflag) {
-            workq.push(tmpthread);
-            send[0] = IDLE;
-            MPI_Isend(send, 1, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
+            if (my_rank) {
+                workq.push(tmpthread);
+                send[0] = IDLE;
+                MPI_Isend(send, 1, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
+            }
+            else {
+                next_edge_range();
+                vertex[tmpthread] = send[1];
+                edge_range[tmpthread] = std::make_pair(send[2], send[3]);
+                lock[tmpthread].clear();
+            }
         }
         if (idlethreadcnt == threadcnt - 1) {
             idlethreadcnt = -1;
@@ -182,18 +197,12 @@ Graphmpi::~Graphmpi() {
     MPI_Finalize();
 }
 
-std::pair<int, int> Graphmpi::get_vertex_range() {
-    for (;global_vertex_lock.test_and_set(););
-    bool returnflag = global_vertex < mynoder;
-    int tmpvertex = global_vertex;
-    if (returnflag) global_vertex += chunksize;
-    global_vertex_lock.clear();
-    if (returnflag) return std::make_pair(tmpvertex, std::min(mynoder, tmpvertex + chunksize));
+std::pair<int, std::pair<int, int> > Graphmpi::get_edge_range() {
     int thread_num = omp_get_thread_num();
 #pragma omp critical
     idleq.push(thread_num);
     for (;lock[thread_num].test_and_set(););
-    return std::make_pair(vertex[thread_num], vertex[thread_num] + chunksize);
+    return std::make_pair(vertex[thread_num], edge_range[thread_num]);
 }
 
 void Graphmpi::report(long long local_ans) {
