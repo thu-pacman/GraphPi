@@ -11,45 +11,45 @@ if (GTEST_FOUND)
 #                        gomp)
 #    gtest_discover_tests(graph_mining_test)
 
-    ADD_EXECUTABLE(pattern_matching_test pattern_matching_test.cpp)
-    TARGET_LINK_LIBRARIES(pattern_matching_test
-                        ${GTEST_BOTH_LIBRARIES}
-                        graph_mining
-                        pthread
-                        gomp)
-    gtest_discover_tests(pattern_matching_test)
+#    ADD_EXECUTABLE(pattern_matching_test pattern_matching_test.cpp)
+#    TARGET_LINK_LIBRARIES(pattern_matching_test
+#                        ${GTEST_BOTH_LIBRARIES}
+#                        graph_mining
+#                        pthread
+#                        gomp)
+#    gtest_discover_tests(pattern_matching_test)
     
-    ADD_EXECUTABLE(performance_modeling_test performance_modeling_test.cpp)
-    TARGET_LINK_LIBRARIES(performance_modeling_test
-                        ${GTEST_BOTH_LIBRARIES}
-                        graph_mining
-                        pthread
-                        gomp)
-    gtest_discover_tests(performance_modeling_test)
+#    ADD_EXECUTABLE(performance_modeling_test performance_modeling_test.cpp)
+#    TARGET_LINK_LIBRARIES(performance_modeling_test
+#                        ${GTEST_BOTH_LIBRARIES}
+#                        graph_mining
+#                        pthread
+#                        gomp)
+#    gtest_discover_tests(performance_modeling_test)
     
-    ADD_EXECUTABLE(restricts_generation_test restricts_generation_test.cpp)
-    TARGET_LINK_LIBRARIES(restricts_generation_test
-                        ${GTEST_BOTH_LIBRARIES}
-                        graph_mining
-                        pthread
-                        gomp)
-    gtest_discover_tests(restricts_generation_test)
+#    ADD_EXECUTABLE(restricts_generation_test restricts_generation_test.cpp)
+#    TARGET_LINK_LIBRARIES(restricts_generation_test
+#                        ${GTEST_BOTH_LIBRARIES}
+#                        graph_mining
+#                        pthread
+#                        gomp)
+#    gtest_discover_tests(restricts_generation_test)
     
-    ADD_EXECUTABLE(schedule_compare_test schedule_compare_test.cpp)
-    TARGET_LINK_LIBRARIES(schedule_compare_test
-                        ${GTEST_BOTH_LIBRARIES}
-                        graph_mining
-                        pthread
-                        gomp)
-    gtest_discover_tests(schedule_compare_test)
+#    ADD_EXECUTABLE(schedule_compare_test schedule_compare_test.cpp)
+#    TARGET_LINK_LIBRARIES(schedule_compare_test
+#                        ${GTEST_BOTH_LIBRARIES}
+#                        graph_mining
+#                        pthread
+#                        gomp)
+#    gtest_discover_tests(schedule_compare_test)
     
-    ADD_EXECUTABLE(restricts_compare_test restricts_compare_test.cpp)
-    TARGET_LINK_LIBRARIES(restricts_compare_test
-                        ${GTEST_BOTH_LIBRARIES}
-                        graph_mining
-                        pthread
-                        gomp)
-    gtest_discover_tests(restricts_compare_test)
+#    ADD_EXECUTABLE(restricts_compare_test restricts_compare_test.cpp)
+#    TARGET_LINK_LIBRARIES(restricts_compare_test
+#                        ${GTEST_BOTH_LIBRARIES}
+#                        graph_mining
+#                        pthread
+#                        gomp)
+#    gtest_discover_tests(restricts_compare_test)
     
 #    ADD_EXECUTABLE(performance_compare_test performance_compare_test.cpp)
 #    TARGET_LINK_LIBRARIES(performance_compare_test
