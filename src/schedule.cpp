@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <algorithm>
 
-Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, bool use_in_exclusion_optimize ,int v_cnt, int e_cnt)
+Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, bool use_in_exclusion_optimize ,int v_cnt, int e_cnt, int tri_cnt)
 {
     is_pattern_valid = true;
     size = pattern.get_size();
@@ -27,7 +27,7 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
         int *best_order;
         best_order = new int[size];
 
-        if( performance_modeling_type == 1) {
+        if( performance_modeling_type == 1 || performance_modeling_type == 3) {
             std::vector< std::vector<int> > candidate_permutations;
 
             unsigned int pow = 1;
@@ -64,7 +64,27 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
                 }
             }
 
-            performance_modeling(best_order, candidate_permutations, v_cnt, e_cnt);
+            if( performance_modeling_type == 1) {
+                performance_modeling(best_order, candidate_permutations, v_cnt, e_cnt);
+            }
+            else {
+                if( !use_in_exclusion_optimize) {
+                    // select candidates
+                    in_exclusion_optimize_num = 0;
+                    for(const std::vector<int> &vec : candidate_permutations) {
+                        in_exclusion_optimize_num = std::max(in_exclusion_optimize_num, get_vec_optimize_num(vec));
+                    }
+                    std::vector< std::vector<int> > tmp;
+                    tmp.clear();
+                    for(const std::vector<int> &vec : candidate_permutations) 
+                        if( in_exclusion_optimize_num == get_vec_optimize_num(vec)) {
+                            tmp.push_back(vec);
+                        }
+                    candidate_permutations = tmp;
+                    in_exclusion_optimize_num =0;
+                }
+                new_performance_modeling(best_order, candidate_permutations, v_cnt, e_cnt, tri_cnt);
+            }
         }
         else {
             GraphZero_performance_modeling(best_order, v_cnt, e_cnt);
@@ -721,6 +741,132 @@ void Schedule::performance_modeling(int* best_order, std::vector< std::vector<in
     delete[] p_size;
 }
 
+void Schedule::new_performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, int e_cnt, int tri_cnt) {
+    int* order;
+    int* rank;
+
+    double* p_size;
+    double* pp_size;
+    int max_degree = get_max_degree();
+    p_size = new double[max_degree];
+    pp_size = new double[max_degree];
+
+    double p0 = e_cnt * 1.0 / v_cnt / v_cnt;
+    double p1 = tri_cnt * 1.0 * v_cnt / e_cnt / e_cnt; 
+    
+    p_size[0] = v_cnt;
+    for(int i = 1;i < max_degree; ++i) {
+        p_size[i] = p_size[i-1] * p0;
+    }
+    pp_size[0] = 1;
+    for(int i = 1; i < max_degree; ++i) {
+        pp_size[i] = pp_size[i-1] * p1;
+    }
+
+    order = new int[size];
+    rank = new int[size];
+    
+    double min_val;
+    bool have_best = false;
+    std::vector<int> invariant_size[size];
+    for(const std::vector<int>& vec : candidates) {
+        for(int i = 0; i < size; ++i)
+            order[i] = vec[i];
+        // check whether it is valid schedule
+        bool is_valid = true;
+        for(int i = 1; i < size; ++i) {
+            bool have_edge = false;
+            for(int j = 0; j < i; ++j)
+                if( adj_mat[INDEX(order[i], order[j], size)]) {
+                    have_edge = true;
+                    break;
+                }
+            if( have_edge == false) {
+                is_valid = false;
+                break;
+            }
+        }
+        if( is_valid == false ) continue;
+        
+        for(int i = 0; i < size; ++i) rank[order[i]] = i;
+        int* cur_adj_mat;
+        cur_adj_mat = new int[size*size];
+        for(int i = 0; i < size; ++i)
+            for(int j = 0; j < size; ++j)
+                cur_adj_mat[INDEX(rank[i], rank[j], size)] = adj_mat[INDEX(i, j, size)];
+
+        std::vector< std::vector< std::pair<int,int> > > restricts_vector;
+        restricts_generate(cur_adj_mat, restricts_vector);
+        for(int restricts_rank = 0; restricts_rank < restricts_vector.size(); ++restricts_rank) {
+            std::vector< std::pair<int,int> >& restricts = restricts_vector[restricts_rank];
+            int restricts_size = restricts.size();
+            std::sort(restricts.begin(), restricts.end());
+            double* sum;
+            sum = new double[restricts_size];
+            for(int i = 0; i < restricts_size; ++i) sum[i] = 0;
+            int* tmp;
+            tmp = new int[size];
+            for(int i = 0; i < size; ++i) tmp[i] = i;
+            do {
+                for(int i = 0; i < restricts_size; ++i)
+                    if(tmp[restricts[i].first] > tmp[restricts[i].second]) {
+                        sum[i] += 1;
+                    }
+                    else break;
+            } while( std::next_permutation(tmp, tmp + size));
+            double total = 1;
+            for(int i = 2; i <= size; ++i) total *= i;
+            for(int i = 0; i < restricts_size; ++i)
+                sum[i] = sum[i] /total;
+            for(int i = restricts_size - 1; i > 0; --i)
+                sum[i] /= sum[i - 1];
+
+            double val = 1;
+            for(int i = 0; i < size; ++i) invariant_size[i].clear();
+            for(int i = size - 1; i >= 0; --i) {
+                int cnt_forward = 0;
+                int cnt_backward = 0;
+                for(int j = 0; j < i; ++j)
+                    if(cur_adj_mat[INDEX(j, i, size)])
+                        ++cnt_forward;
+                for(int j = i + 1; j < size; ++j)
+                    if(cur_adj_mat[INDEX(j, i, size)])
+                        ++cnt_backward;
+
+                int c = cnt_forward;
+                for(int j = i - 1; j >= 0; --j)
+                    if(cur_adj_mat[INDEX(j, i, size)])
+                        invariant_size[j].push_back(c--);
+
+                for(int j = 0; j < invariant_size[i].size(); ++j)
+                    if(invariant_size[i][j] > 1) 
+                        val += p_size[1] * pp_size[invariant_size[i][j] - 2] + p_size[1];
+                val += 1;
+                for(int j = 0; j < restricts_size; ++j)
+                    if(restricts[j].second == i)
+                        val *=  sum[j];
+                val *= p_size[1] * pp_size[ cnt_forward - 1 ];
+
+            }
+            if( have_best == false || val < min_val) {
+                have_best = true;
+                for(int i = 0; i < size; ++i)
+                    best_order[i] = order[i];
+                min_val = val;
+            }
+            delete[] sum;
+            delete[] tmp;
+        }
+        delete[] cur_adj_mat;
+
+    }
+
+    delete[] order;
+    delete[] rank;
+    delete[] p_size;
+    delete[] pp_size;
+}
+
 void Schedule::init_in_exclusion_optimize() {
     int optimize_num = in_exclusion_optimize_num;
     
@@ -834,19 +980,21 @@ void Schedule::GraphZero_performance_modeling(int* best_order, int v_cnt, int e_
 
     double* p_size;
     double* anti_p;
-    int max_degree = get_max_degree();
-    p_size = new double[max_degree];
-    anti_p = new double[max_degree];
+    p_size = new double[size];
+    anti_p = new double[size];
 
-    double p = e_cnt * 1.0 / v_cnt / v_cnt;
-    
+    double p = e_cnt * 2.0 / v_cnt / v_cnt;
+
+    printf("fuck p %.6lf\n",p);
     p_size[0] = v_cnt;
-    for(int i = 1; i < max_degree; ++i) {
+    for(int i = 1; i < size; ++i) {
         p_size[i] = p_size[i-1] * p;
+        printf("p %d %.6lf\n", i, p_size[i]);
     }
     anti_p[0] = 1;
-    for(int i = 1; i < max_degree; ++i) {
+    for(int i = 1; i < size; ++i) {
         anti_p[i] = anti_p[i-1] * (1-p);
+        printf("anti %d %.6lf\n", i, anti_p[i]);
     }
 
     order = new int[size];
@@ -906,7 +1054,6 @@ void Schedule::GraphZero_performance_modeling(int* best_order, int v_cnt, int e_
         double val = 1;
         for(int i = size - 1; i >= 0; --i) {
             int cnt_forward = 0;
-            int cnt_backward = 0;
             for(int j = 0; j < i; ++j)
                 if(cur_adj_mat[INDEX(j, i, size)])
                     ++cnt_forward;
@@ -914,14 +1061,19 @@ void Schedule::GraphZero_performance_modeling(int* best_order, int v_cnt, int e_
             for(int j = 0; j < restricts_size; ++j)
                 if(restricts[j].second == i)
                     val *=  sum[j];
-            val *= p_size[cnt_forward] * anti_p[i - cnt_forward];
-        
+      //      val *= p_size[cnt_forward + 1] * anti_p[i - cnt_forward];
+            val *= v_cnt;
+            for(int j = 0; j < i - cnt_forward; ++j)
+                val *= (1-p);
+            for(int j = 0; j < cnt_forward; ++j)
+                val *= p;
         }
-        if( have_best == false || val < min_val) {
+        if( have_best == false || val <= min_val) {
             have_best = true;
             for(int i = 0; i < size; ++i)
                 best_order[i] = order[i];
             min_val = val;
+            printf("gz upd %.10lf\n", val);
         }
         
         delete[] cur_adj_mat;
@@ -936,17 +1088,25 @@ void Schedule::GraphZero_performance_modeling(int* best_order, int v_cnt, int e_
     delete[] anti_p;
 }
 
-void Schedule::restrict_selection(int v_cnt, int e_cnt, std::vector< std::vector< std::pair<int,int> > > ordered_pairs_vector, std::vector< std::pair<int,int> > &best_restricts) const{
+void Schedule::restrict_selection(int v_cnt, int e_cnt, int tri_cnt, std::vector< std::vector< std::pair<int,int> > > ordered_pairs_vector, std::vector< std::pair<int,int> > &best_restricts) const{
     
     double* p_size;
+    double* pp_size;
     int max_degree = get_max_degree();
     p_size = new double[max_degree];
+    pp_size = new double[max_degree];
 
-    double p = e_cnt * 1.0 / v_cnt / v_cnt;
+    double p0 = e_cnt * 1.0 / v_cnt / v_cnt;
+    double p1 = tri_cnt * 1.0 * v_cnt / e_cnt / e_cnt;
     
     p_size[0] = v_cnt;
     for(int i = 1;i < max_degree; ++i) {
-        p_size[i] = p_size[i-1] * p;
+        p_size[i] = p_size[i-1] * p0;
+    }
+    
+    pp_size[0] = 1;
+    for(int i = 1; i < max_degree; ++i) {
+        pp_size[i] = pp_size[i-1] * p1;
     }
 
     double min_val;
@@ -1002,11 +1162,12 @@ void Schedule::restrict_selection(int v_cnt, int e_cnt, std::vector< std::vector
 
             for(int j = 0; j < invariant_size[i].size(); ++j)
                 if(invariant_size[i][j] > 1) 
-                    val += p_size[invariant_size[i][j] - 1] + p_size[1];
+                    val += p_size[1] * pp_size[invariant_size[i][j] - 2] + p_size[1];
+            val += 1;
             for(int j = 0; j < restricts_size; ++j)
                 if(restricts[j].second == i)
                     val *=  sum[j];
-            val *= p_size[cnt_forward];
+            val *= p_size[1] * pp_size[cnt_forward-1];
         
         }
         if( have_best == false || val < min_val) {
@@ -1021,6 +1182,7 @@ void Schedule::restrict_selection(int v_cnt, int e_cnt, std::vector< std::vector
     }
 
     delete[] p_size;
+    delete[] pp_size;
     assert(have_best);
 }
 
@@ -1065,7 +1227,7 @@ int Schedule::get_vec_optimize_num(const std::vector<int> &vec) {
     }
     if( !is_valid) return -1;
 
-    for(int k = 2; k < size; ++k) {
+    for(int k = 2; k <= size; ++k) {
         bool flag = true;
         for(int i = size - k + 1; i < size; ++i)
             if(adj_mat[INDEX(vec[size - k], vec[i], size)]) {

@@ -55,24 +55,34 @@ void test_pattern(Graph* g, Pattern &pattern) {
     long long ans_gz = g->pattern_matching(schedule_gz, thread_num);
     t4 = get_wall_time();
 
-    if( (t2 - t1) * 2 < t4 - t3) {
-        printf("our ans: %lld perf_time: %.6lf time: %.6lf\n", ans_our, t6 - t5, t2 - t1);
-        schedule_our.print_schedule();
-        for(int i = 0; i < our_pairs.size(); ++i)
-            printf("(%d,%d)",our_pairs[i].first, our_pairs[i].second);
-        puts("");
-        fflush(stdout);
-        printf("GZ  ans: %lld perf_time: %.6lf time: %.6lf\n", ans_gz, t8 - t7, t4 - t3);
-        schedule_gz.print_schedule();
-        for(int i = 0; i < gz_pairs.size(); ++i)
-            printf("(%d,%d)",gz_pairs[i].first, gz_pairs[i].second);
-        puts("");
-        fflush(stdout);
-    }    
-
+    printf("our ans: %lld perf_time: %.6lf time: %.6lf\n", ans_our, t6 - t5, t2 - t1);
+    schedule_our.print_schedule();
+    for(int i = 0; i < our_pairs.size(); ++i)
+        printf("(%d,%d)",our_pairs[i].first, our_pairs[i].second);
+    puts("");
+    fflush(stdout);
+    printf("GZ  ans: %lld perf_time: %.6lf time: %.6lf\n", ans_gz, t8 - t7, t4 - t3);
+    schedule_gz.print_schedule();
+    for(int i = 0; i < gz_pairs.size(); ++i)
+        printf("(%d,%d)",gz_pairs[i].first, gz_pairs[i].second);
+    puts("");
+    fflush(stdout);
 }
 
-int main(int argc,char *argv[]) {
+int readBit() {
+    char ch = getchar();
+    while( ch != '0' && ch != '1') ch = getchar();
+    return ch - '0';
+}
+
+int main(int argc,char *argv[]) { 
+    int pattern_size;
+    scanf("%d", &pattern_size);
+    Pattern pattern(pattern_size);
+    for(int i = 0; i < pattern_size; ++i)
+        for(int j = 0; j < pattern_size; ++j) 
+            if(readBit() == 1) pattern.add_edge(i,j);
+
     Graph *g;
     DataLoader D;
 
@@ -88,29 +98,31 @@ int main(int argc,char *argv[]) {
 
     printf("Load data success!\n");
     fflush(stdout);
-    
+
+    test_pattern(g, pattern);
+
     //   test_pattern(g, PatternType::Rectangle);
     //   test_pattern(g, PatternType::QG3);
     //   test_pattern(g, PatternType::Pentagon);
-/*    Pattern pattern_house(PatternType::House);
-    Pattern pattern_hourglass(PatternType::Hourglass);
-    Pattern pattern_cycle_6_tri(PatternType::Cycle_6_Tri);
-    Pattern pattern_clique_7_minus(PatternType::Clique_7_Minus);
-    
-    test_pattern(g, pattern_house);
-    test_pattern(g, pattern_hourglass);
-    test_pattern(g, pattern_cycle_6_tri);
-    test_pattern(g, pattern_clique_7_minus);
-*/
+    /*    Pattern pattern_house(PatternType::House);
+          Pattern pattern_hourglass(PatternType::Hourglass);
+          Pattern pattern_cycle_6_tri(PatternType::Cycle_6_Tri);
+          Pattern pattern_clique_7_minus(PatternType::Clique_7_Minus);
 
-    for(int size = 6; size < 7; ++size) {
-        MotifGenerator mg(size);
-        std::vector<Pattern> patterns = mg.generate();
-        for(int i = patterns.size() / 3 + 2; i < patterns.size(); ++i) {
-            test_pattern(g, patterns[i]);
-        }
-    }
-
+          test_pattern(g, pattern_house);
+          test_pattern(g, pattern_hourglass);
+          test_pattern(g, pattern_cycle_6_tri);
+          test_pattern(g, pattern_clique_7_minus);
+     */
+    /*
+       for(int size = 6; size < 7; ++size) {
+       MotifGenerator mg(size);
+       std::vector<Pattern> patterns = mg.generate();
+       for(int i = patterns.size() / 3 + 2; i < patterns.size(); ++i) {
+       test_pattern(g, patterns[i]);
+       }
+       }
+     */
     /*
        Pattern pattern(7);
        for(int i = 0; i < 3; ++i) {
@@ -132,7 +144,7 @@ int main(int argc,char *argv[]) {
     pattern.add_edge(2, 4);
     pattern.add_edge(2, 5);
      */
-/*     
+    /*     
     // this is pattern317
     Pattern pattern(6);
     pattern.add_edge(0, 3);
