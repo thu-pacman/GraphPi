@@ -18,7 +18,7 @@ public:
     void get_loop(int &_loop_size, int *&_loop_data_ptr);
 
 private:
-    static const int MAXN = 1 << 22, MAXTHREAD = 24, chunk_divide_const = 50;
+    static const int MAXN = 1 << 22, MAXTHREAD = 24, chunk_const = 5;
     Graph* graph;
     int comm_sz, my_rank, mynodel, mynoder, blocksize, idlethreadcnt, threadcnt, global_vertex, vertex[MAXTHREAD], chunksize, loop_size[MAXTHREAD], *loop_data_ptr[MAXTHREAD];
     bool loop_flag = false;

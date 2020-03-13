@@ -78,7 +78,7 @@ TEST(aggressive_optimize_test, aggre_ssive_optimize)
     DataLoader D;
     
     std::string type = "Patents";
-    std::string path = "/home/zms/patents_input";
+    std::string path = "/home/zms/orkut_input";
     //std::string path = "/home/xuyi/input/4.in";
     
     DataType my_type;
@@ -125,7 +125,7 @@ TEST(aggressive_optimize_test, aggre_ssive_optimize)
     int thread_count = 24;
     schedule.aggressive_optimize(pairs); // check if the isomorphism_vec size can be deleted to 1 by restriction.("assert(isomorphism_vec.size() == 1);")
     schedule.add_restrict(pairs);
-    {
+    /*{
         double t1 = get_wall_time();
         //long long ans_aggressive = g->pattern_matching_mpi(schedule, thread_count);
         long long ans_aggressive = g->pattern_matching(schedule, thread_count);
@@ -136,13 +136,13 @@ TEST(aggressive_optimize_test, aggre_ssive_optimize)
         double t2 = get_wall_time();
         printf("single node TC time: %.6lf, ans = %lld, expected = 7515023\n", t2 - t1, ans_aggressive);
         fflush(stdout);
-    }
+    }*/
     {
         double t1 = get_wall_time();
         //long long ans_aggressive = g->pattern_matching_mpi(schedule, thread_count);
         long long ans_aggressive = g->pattern_matching_mpi(schedule, thread_count);
         //ASSERT_EQ(ans_aggressive, 19186236035);
-        ASSERT_EQ(ans_aggressive, 7515023);
+        //ASSERT_EQ(ans_aggressive, 7515023);
         //ASSERT_EQ(ans_aggressive, 627584181);
         double t2 = get_wall_time();
         printf("multi node TC time: %.6lf, ans = %lld, expected = 7515023\n", t2 - t1, ans_aggressive);

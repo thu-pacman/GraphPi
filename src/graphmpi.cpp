@@ -22,7 +22,8 @@ std::pair<int, int> Graphmpi::init(int _threadcnt, Graph* _graph, int schedulesi
     MPI_Barrier(MPI_COMM_WORLD);
     starttime = get_wall_time();
     blocksize = (graph->v_cnt + comm_sz - 1) / comm_sz;
-    chunksize = std::max(graph->e_cnt / threadcnt / comm_sz / schedulesize / chunk_divide_const, 1);
+    chunksize = std::max((threadcnt - 1) * comm_sz * chunk_const / (graph->e_cnt / graph->v_cnt), 1);
+    //chunksize = std::max(graph->e_cnt / threadcnt / comm_sz / schedulesize / chunk_divide_const, 1);
     /*int k = comm_sz - my_rank - 1;
     global_vertex = mynodel = blocksize * k;
     mynoder = k < comm_sz - 1 ? blocksize * (k + 1) : graph->v_cnt;*/
