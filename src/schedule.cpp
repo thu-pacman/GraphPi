@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <algorithm>
 
-Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, bool use_in_exclusion_optimize ,int v_cnt, int e_cnt, int tri_cnt)
+Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, bool use_in_exclusion_optimize ,int v_cnt, unsigned int e_cnt, long long tri_cnt)
 {
     is_pattern_valid = true;
     size = pattern.get_size();
@@ -624,7 +624,7 @@ std::vector< std::vector<int> > Schedule::calc_permutation_group(const std::vect
     return res;
 }
 
-void Schedule::performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, int e_cnt) {
+void Schedule::performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, unsigned int e_cnt) {
     int* order;
     int* rank;
 
@@ -741,7 +741,7 @@ void Schedule::performance_modeling(int* best_order, std::vector< std::vector<in
     delete[] p_size;
 }
 
-void Schedule::new_performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, int e_cnt, int tri_cnt) {
+void Schedule::new_performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, unsigned int e_cnt, long long tri_cnt) {
     int* order;
     int* rank;
 
@@ -974,7 +974,7 @@ void Schedule::print_schedule() const{
     }
 }
 
-void Schedule::GraphZero_performance_modeling(int* best_order, int v_cnt, int e_cnt) {
+void Schedule::GraphZero_performance_modeling(int* best_order, int v_cnt, unsigned int e_cnt) {
     int* order;
     int* rank;
 
@@ -1088,7 +1088,7 @@ void Schedule::GraphZero_performance_modeling(int* best_order, int v_cnt, int e_
     delete[] anti_p;
 }
 
-void Schedule::restrict_selection(int v_cnt, int e_cnt, int tri_cnt, std::vector< std::vector< std::pair<int,int> > > ordered_pairs_vector, std::vector< std::pair<int,int> > &best_restricts) const{
+void Schedule::restrict_selection(int v_cnt, unsigned int e_cnt, long long tri_cnt, std::vector< std::vector< std::pair<int,int> > > ordered_pairs_vector, std::vector< std::pair<int,int> > &best_restricts) const{
     
     double* p_size;
     double* pp_size;

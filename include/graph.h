@@ -6,14 +6,17 @@ class Graphmpi;
 class Graph {
 public:
     int v_cnt; // number of vertex
-    int e_cnt; // number of edge
-    
+    unsigned int e_cnt; // number of edge
+    long long tri_cnt;
+
     int *edge; // edges
-    int *vertex; // v_i's neighbor is in edge[ vertex[i], vertex[i+1]-1]
+    unsigned int *vertex; // v_i's neighbor is in edge[ vertex[i], vertex[i+1]-1]
     
     Graph() {
-        v_cnt = e_cnt = 0;
-        edge = vertex = nullptr;
+        v_cnt = 0;
+        e_cnt = 0;
+        edge = nullptr;
+        vertex = nullptr;
     }
 
     ~Graph() {
@@ -43,7 +46,7 @@ private:
     friend Graphmpi;
     void tc_mt(long long * global_ans);
 
-    void get_edge_index(int v, int& l, int& r) const;
+    void get_edge_index(int v, unsigned int& l, unsigned int& r) const;
 
     void pattern_matching_func(const Schedule& schedule, VertexSet* vertex_set, VertexSet& subtraction_set, long long& local_ans, int depth, bool clique = false);
 

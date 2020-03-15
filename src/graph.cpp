@@ -15,9 +15,9 @@
 #include <iostream>
 
 int Graph::intersection_size(int v1,int v2) {
-    int l1, r1;
+    unsigned int l1, r1;
     get_edge_index(v1, l1, r1);
-    int l2, r2;
+    unsigned int l2, r2;
     get_edge_index(v2, l2, r2);
     int ans = 0;
     while(l1 < r1 && l2 < r2) {
@@ -43,7 +43,7 @@ int Graph::intersection_size_mpi(int v1, int v2) {
     int ans = 0;
     if (gm.include(v2))
         return intersection_size(v1, v2);
-    int l1, r1;
+    unsigned int l1, r1;
     get_edge_index(v1, l1, r1);
     int *data = gm.getneighbor(v2);
     for (int l2 = 0; l1 < r1 && ~data[l2];) {
@@ -63,9 +63,9 @@ int Graph::intersection_size_mpi(int v1, int v2) {
 }
 
 int Graph::intersection_size_clique(int v1,int v2) {
-    int l1, r1;
+    unsigned int l1, r1;
     get_edge_index(v1, l1, r1);
-    int l2, r2;
+    unsigned int l2, r2;
     get_edge_index(v2, l2, r2);
     int min_vertex = v2;
     int ans = 0;
@@ -97,9 +97,9 @@ long long Graph::triangle_counting() {
     long long ans = 0;
     for(int v = 0; v < v_cnt; ++v) {
         // for v in G
-        int l, r;
+        unsigned int l, r;
         get_edge_index(v, l, r);
-        for(int v1 = l; v1 < r; ++v1) {
+        for(unsigned int v1 = l; v1 < r; ++v1) {
             //for v1 in N(v)
             ans += intersection_size(v,edge[v1]);
         }
@@ -122,9 +122,9 @@ void Graph::tc_mt(long long *global_ans) {
     #pragma omp for schedule(dynamic)
     for(int v = 0; v < v_cnt; ++v) {
         // for v in G
-        int l, r;
+        unsigned int l, r;
         get_edge_index(v, l, r);
-        for(int v1 = l; v1 < r; ++v1) {
+        for(unsigned int v1 = l; v1 < r; ++v1) {
             if (v <= edge[v1])
                 break;
             //for v1 in N(v)
@@ -171,7 +171,7 @@ long long Graph::triangle_counting_mpi(int thread_count) {
     return -1;
 }
 
-void Graph::get_edge_index(int v, int& l, int& r) const
+void Graph::get_edge_index(int v, unsigned int& l, unsigned int& r) const
 {
     l = vertex[v];
     r = vertex[v + 1];
@@ -210,12 +210,12 @@ void Graph::pattern_matching_func(const Schedule& schedule, VertexSet* vertex_se
         if (!clique)
             if (subtraction_set.has_data(vertex))
                 continue;
-        int l, r;
+        unsigned int l, r;
         get_edge_index(vertex, l, r);
         bool is_zero = false;
         for (int prefix_id = schedule.get_last(depth); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
         {
-            vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], r - l, prefix_id, vertex, clique);
+            vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], (int)r - l, prefix_id, vertex, clique);
             if( vertex_set[prefix_id].get_size() == 0) {
                 is_zero = true;
                 break;
@@ -231,7 +231,6 @@ void Graph::pattern_matching_func(const Schedule& schedule, VertexSet* vertex_se
 
 long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bool clique)
 {
-    int pattern_size = schedule.get_size(); 
     long long global_ans = 0;
 #pragma omp parallel num_threads(thread_count) reduction(+: global_ans)
     {
@@ -243,11 +242,11 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
 #pragma omp for schedule(dynamic)
         for (int vertex = 0; vertex < v_cnt; ++vertex)
         {
-            int l, r;
+            unsigned int l, r;
             get_edge_index(vertex, l, r);
             for (int prefix_id = schedule.get_last(0); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
             {
-                vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], r - l, prefix_id);
+                vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], (int)r - l, prefix_id);
             }
             //subtraction_set.insert_ans_sort(vertex);
             subtraction_set.push_back(vertex);
@@ -394,12 +393,12 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
         int vertex = loop_data_ptr[i];
         if (subtraction_set.has_data(vertex))
             continue;
-        int l, r;
+        unsigned int l, r;
         get_edge_index(vertex, l, r);
         bool is_zero = false;
         for (int prefix_id = schedule.get_last(depth); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
         {
-            vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], r - l, prefix_id, vertex);
+            vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], (int)r - l, prefix_id, vertex);
             if( vertex_set[prefix_id].get_size() == 0) {
                 is_zero = true;
                 break;
@@ -448,7 +447,7 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
                 if ((range = gm.get_vertex_range()).first == -1) break;
                 //for (int vertex = v_cnt - range.second; vertex < v_cnt - range.first; vertex++) {//backwards slower than forwards
                 for (int vertex = range.first; vertex < range.second; vertex++) {
-                    int l, r;
+                    unsigned int l, r;
                     get_edge_index(vertex, l, r);
                     match_start_vertex(vertex, edge + l, r - l);
                 }
@@ -504,7 +503,7 @@ void Graph::pattern_matching_aggressive_func_mpi(const Schedule& schedule, Verte
         Graphmpi &gm = Graphmpi::getinstance();
         //if (gm.include(vertex)) {
         if (true) {
-            int l, r;
+            unsigned int l, r;
             get_edge_index(vertex, l, r);
             data = edge + l;
             size = r - l;

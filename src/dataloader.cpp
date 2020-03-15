@@ -6,11 +6,11 @@
 
 bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int oriented_type) {
     if(type == Patents || type == Orkut || type == complete8 || type == LiveJournal || type == MiCo) {
-        return general_load_data(g, type, path, oriented);
+        return general_load_data(g, type, path, oriented_type);
     }
 
     if( type == Twitter) {
-        return twitter_load_data(g, type, path, oriented);
+        return twitter_load_data(g, type, path, oriented_type);
     }
     printf("invalid DataType!\n");
     return false;
@@ -24,14 +24,15 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
     }
     printf("Load begin in %s\n",path);
     g = new Graph();
-    scanf("%d%d",&g->v_cnt,&g->e_cnt);
+    scanf("%d%u",&g->v_cnt,&g->e_cnt);
     int* degree = new int[g->v_cnt];
     memset(degree, 0, g->v_cnt * sizeof(int));
     g->e_cnt *= 2;
     std::pair<int,int> *e = new std::pair<int,int>[g->e_cnt];
     id.clear();
     int x,y;
-    int tmp_v,tmp_e;
+    int tmp_v;
+    unsigned int tmp_e;
     tmp_v = 0;
     tmp_e = 0;
     while(scanf("%d%d",&x,&y)!=EOF) {
@@ -49,8 +50,8 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
         e[tmp_e++] = std::make_pair(y,x);
         ++degree[x];
         ++degree[y];
-        if(tmp_e % 1000000 == 0) {
-            printf("load %d edges\n",tmp_e);
+        if(tmp_e % 1000000u == 0u) {
+            printf("load %u edges\n",tmp_e);
             fflush(stdout);
         }
     }
@@ -65,7 +66,7 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
         if( oriented_type == 1) std::sort(rank, rank + g->v_cnt, cmp_degree_gt);
         if( oriented_type == 2) std::sort(rank, rank + g->v_cnt, cmp_degree_lt);
         for(int i = 0; i < g->v_cnt; ++i) new_id[rank[i].first] = i;
-        for(int i = 0; i < g->e_cnt; ++i) {
+        for(unsigned int i = 0; i < g->e_cnt; ++i) {
             e[i].first = new_id[e[i].first];
             e[i].second = new_id[e[i].second];
         }
@@ -92,7 +93,7 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
     }
     std::sort(e,e+tmp_e,cmp_pair);
     g->e_cnt = unique(e,e+tmp_e) - e;
-    for(int i = 0; i < g->e_cnt - 1; ++i)
+    for(unsigned int i = 0; i < g->e_cnt - 1; ++i)
         if(e[i] == e[i+1]) {
             printf("have same edge\n");
             fclose(stdin);
@@ -101,26 +102,27 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
             return false;
         }
     g->edge = new int[g->e_cnt];
-    g->vertex = new int[g->v_cnt + 1];
+    g->vertex = new unsigned int[g->v_cnt + 1];
+    bool* have_edge = new bool[g->v_cnt];
     int lst_v = -1;
-    for(int i = 0; i < g->v_cnt; ++i) g->vertex[i] = -1;
-    for(int i = 0; i < g->e_cnt; ++i) {
-        if(e[i].first != lst_v)
+    for(int i = 0; i < g->v_cnt; ++i) have_edge[i] = false;
+    for(unsigned int i = 0; i < g->e_cnt; ++i) {
+        if(e[i].first != lst_v) {
+            have_edge[e[i].first] = true;
             g->vertex[e[i].first] = i;
+        }
         lst_v = e[i].first;
         g->edge[i] = e[i].second;
     }
     delete[] e;
-    printf("Success! There are %d nodes and %d edges.\n",g->v_cnt,g->e_cnt);
+    printf("Success! There are %d nodes and %u edges.\n",g->v_cnt,g->e_cnt);
     fflush(stdout);
-    if(g->vertex[g->v_cnt - 1] == -1)
-        g->vertex[g->v_cnt - 1] = g->e_cnt;
     g->vertex[g->v_cnt] = g->e_cnt;
-    for(int i = g->v_cnt - 2; i >= 0; --i)
-        if(g->vertex[i] == -1) {
+    for(int i = g->v_cnt - 1; i >= 0; --i)
+        if(!have_edge[i]) {
             g->vertex[i] = g->vertex[i+1];
-
         }
+    delete[] have_edge;
 
     return true;
 }
@@ -133,13 +135,10 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
     }
     printf("Load begin in %s\n",path);
     g = new Graph();
-//    int* degree = new int[g->v_cnt];
-//    memset(degree, 0, g->v_cnt * sizeof(int));
-//    g->e_cnt *= 2;
-//    std::pair<int,int> *e = new std::pair<int,int>[g->e_cnt];
     id.clear();
     int x,y;
-    int tmp_v,tmp_e;
+    int tmp_v;
+    unsigned int tmp_e;
     tmp_v = 0;
     tmp_e = 0;
     std::vector< std::pair<int,int> > buffer;
@@ -156,12 +155,8 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
         y = id[y];
         buffer.push_back(std::make_pair(x,y));
         ++tmp_e;
-//        e[tmp_e++] = std::make_pair(x,y);
-//        e[tmp_e++] = std::make_pair(y,x);
-//        ++degree[x];
-//        ++degree[y];
-        if(tmp_e % 1000000 == 0) {
-            printf("load %d edges\n",tmp_e);
+        if(tmp_e % 1000000u == 0u) {
+            printf("load %u edges\n",tmp_e);
             fflush(stdout);
         }
     }
@@ -188,7 +183,7 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
         if( oriented_type == 1) std::sort(rank, rank + g->v_cnt, cmp_degree_gt);
         if( oriented_type == 2) std::sort(rank, rank + g->v_cnt, cmp_degree_lt);
         for(int i = 0; i < g->v_cnt; ++i) new_id[rank[i].first] = i;
-        for(int i = 0; i < g->e_cnt; ++i) {
+        for(unsigned int i = 0; i < g->e_cnt; ++i) {
             e[i].first = new_id[e[i].first];
             e[i].second = new_id[e[i].second];
         }
@@ -215,7 +210,7 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
     }
     std::sort(e,e+tmp_e,cmp_pair);
     g->e_cnt = unique(e,e+tmp_e) - e;
-    for(int i = 0; i < g->e_cnt - 1; ++i)
+    for(unsigned i = 0; i < g->e_cnt - 1; ++i)
         if(e[i] == e[i+1]) {
             printf("have same edge\n");
             fclose(stdin);
@@ -224,27 +219,28 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
             return false;
         }
     g->edge = new int[g->e_cnt];
-    g->vertex = new int[g->v_cnt + 1];
+    g->vertex = new unsigned int[g->v_cnt + 1];
+    bool* have_edge = new bool[g->v_cnt];
     int lst_v = -1;
-    for(int i = 0; i < g->v_cnt; ++i) g->vertex[i] = -1;
-    for(int i = 0; i < g->e_cnt; ++i) {
-        if(e[i].first != lst_v)
+    for(int i = 0; i < g->v_cnt; ++i) have_edge[i] = false;
+    for(unsigned int i = 0; i < g->e_cnt; ++i) {
+        if(e[i].first != lst_v) {
+            have_edge[e[i].first] = true;
             g->vertex[e[i].first] = i;
+        }
         lst_v = e[i].first;
         g->edge[i] = e[i].second;
     }
     delete[] e;
-    printf("Success! There are %d nodes and %d edges.\n",g->v_cnt,g->e_cnt);
+    printf("Success! There are %d nodes and %u edges.\n",g->v_cnt,g->e_cnt);
     fflush(stdout);
-    if(g->vertex[g->v_cnt - 1] == -1)
-        g->vertex[g->v_cnt - 1] = g->e_cnt;
     g->vertex[g->v_cnt] = g->e_cnt;
-    for(int i = g->v_cnt - 2; i >= 0; --i)
-        if(g->vertex[i] == -1) {
+    for(int i = g->v_cnt - 1; i >= 0; --i)
+        if(!have_edge[i]) {
             g->vertex[i] = g->vertex[i+1];
-
         }
 
+    delete[] have_edge;
     return true;
 }
 
@@ -259,7 +255,8 @@ bool DataLoader::load_data(Graph* &g, int clique_size) {
     g->e_cnt *= 2;
     std::pair<int,int> *e = new std::pair<int,int>[g->e_cnt];
     id.clear();
-    int tmp_v,tmp_e;
+    int tmp_v;
+    unsigned int tmp_e;
     tmp_v = 0;
     tmp_e = 0;
     for(int i = 0; i < clique_size; ++i)
@@ -296,25 +293,25 @@ bool DataLoader::load_data(Graph* &g, int clique_size) {
     std::sort(e,e+tmp_e,cmp_pair);
     g->e_cnt = unique(e,e+tmp_e) - e;
     g->edge = new int[g->e_cnt];
-    g->vertex = new int[g->v_cnt + 1];
+    g->vertex = new unsigned int[g->v_cnt + 1];
+    bool* have_edge = new bool[g->v_cnt];
     int lst_v = -1;
-    for(int i = 0; i < g->v_cnt; ++i) g->vertex[i] = -1;
-    for(int i = 0; i < g->e_cnt; ++i) {
-        if(e[i].first != lst_v)
+    for(int i = 0; i < g->v_cnt; ++i) have_edge[i] = false;
+    for(unsigned int i = 0; i < g->e_cnt; ++i) {
+        if(e[i].first != lst_v) {
+            have_edge[e[i].first] = true;
             g->vertex[e[i].first] = i;
+        }
         lst_v = e[i].first;
         g->edge[i] = e[i].second;
     }
     delete[] e;
-    if(g->vertex[g->v_cnt - 1] == -1)
-        g->vertex[g->v_cnt - 1] = g->e_cnt;
     g->vertex[g->v_cnt] = g->e_cnt;
-    for(int i = g->v_cnt - 2; i >= 0; --i)
-        if(g->vertex[i] == -1) {
+    for(int i = g->v_cnt - 1; i >= 0; --i)
+        if(!have_edge[i]) {
             g->vertex[i] = g->vertex[i+1];
-
         }
-
+    delete[] have_edge;
     return true;
 }
 
