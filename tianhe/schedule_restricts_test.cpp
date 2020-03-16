@@ -69,6 +69,7 @@ int main(int argc,char *argv[]) {
     printf("Load data success!\n");
     fflush(stdout);
 
+
     int rank = 0;
 
     for(int size = 3; size < 7; ++size) {
@@ -88,6 +89,6 @@ int main(int argc,char *argv[]) {
             test_pattern(g, p, 3, true);
         }
     }
-    
+
     delete g;
 }
