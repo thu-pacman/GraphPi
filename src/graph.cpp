@@ -234,7 +234,6 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
     long long global_ans = 0;
 #pragma omp parallel num_threads(thread_count) reduction(+: global_ans)
     {
-        double t1 = get_wall_time();
         VertexSet* vertex_set = new VertexSet[schedule.get_total_prefix_num()];
         VertexSet subtraction_set;
         subtraction_set.init();
@@ -259,8 +258,6 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
             subtraction_set.pop_back();
         }
         delete[] vertex_set;
-        double t2 = get_wall_time();
-        printf("thread time %.6lf\n", t2 - t1);
 
         // TODO : Computing multiplicty for a pattern
         global_ans += local_ans;
