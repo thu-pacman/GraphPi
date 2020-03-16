@@ -21,6 +21,7 @@ void test_pattern(Graph* g, Pattern &pattern, int performance_modeling_type, boo
     double t3 = get_wall_time();
     Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt, tri_cnt);
     assert(is_pattern_valid);
+    printf("in_exclusion_optimize_num = %d\n", schedule.get_in_exclusion_optimize_num());
 
     if(schedule.get_multiplicity() == 1) return;
 

@@ -43,24 +43,19 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
 
             if(use_in_exclusion_optimize == true) {
                 // select candidates
-                in_exclusion_optimize_num = 0;
+                int max_val = 0;
                 for(const std::vector<int> &vec : candidate_permutations) {
-                    in_exclusion_optimize_num = std::max(in_exclusion_optimize_num, get_vec_optimize_num(vec));
+                    max_val = std::max(max_val, get_vec_optimize_num(vec));
                 }
                 std::vector< std::vector<int> > tmp;
                 tmp.clear();
                 for(const std::vector<int> &vec : candidate_permutations) 
-                    if( in_exclusion_optimize_num == get_vec_optimize_num(vec)) {
+                    if( get_vec_optimize_num(vec) == max_val) {
                         tmp.push_back(vec);
                     }
 
-                if(in_exclusion_optimize_num > 1) {
+                if(max_val > 1) {
                     candidate_permutations = tmp;
-                    init_in_exclusion_optimize();
-                }
-                else {
-                 // in_exclusion_optimize_num == 1 is meaningless
-                    in_exclusion_optimize_num = 0;
                 }
             }
 
@@ -70,25 +65,23 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
             else {
                 if( !use_in_exclusion_optimize) {
                     // select candidates
-                    in_exclusion_optimize_num = 0;
+                    int max_val = 0;
                     for(const std::vector<int> &vec : candidate_permutations) {
-                        in_exclusion_optimize_num = std::max(in_exclusion_optimize_num, get_vec_optimize_num(vec));
+                        max_val = std::max(max_val, get_vec_optimize_num(vec));
                     }
                     std::vector< std::vector<int> > tmp;
                     tmp.clear();
                     for(const std::vector<int> &vec : candidate_permutations) 
-                        if( in_exclusion_optimize_num == get_vec_optimize_num(vec)) {
+                        if( get_vec_optimize_num(vec) == max_val) {
                             tmp.push_back(vec);
                         }
                     candidate_permutations = tmp;
-                    in_exclusion_optimize_num =0;
                 }
                 new_performance_modeling(best_order, candidate_permutations, v_cnt, e_cnt, tri_cnt);
             }
         }
         else {
             GraphZero_performance_modeling(best_order, v_cnt, e_cnt);
-            in_exclusion_optimize_num = 0;
         }
         int *rank;
         rank = new int[size];
@@ -100,9 +93,20 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
         delete[] rank;
         delete[] best_order;
     }
-    else {
-        in_exclusion_optimize_num = 0;
+
+    if( use_in_exclusion_optimize) {
+       std::vector<int> I;
+       for(int i = 0; i < size; ++i) I[i] = i;
+       in_exclusion_optimize_num = get_vec_optimize_num(I);
+       if( in_exclusion_optimize_num <= 1) {
+           printf("Can not use in_exclusion_optimize with this schedule\n");
+           in_exclusion_optimize_num = 0;
+       }
+       else {
+           init_in_exclusion_optimize();
+       }
     }
+
 
     // The I-th loop consists of at most the intersection of i-1 VertexSet.
     // So the max number of prefix = 0 + 1 + ... + size-1 = size * (size-1) / 2
