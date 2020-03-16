@@ -9,3 +9,6 @@ TARGET_LINK_LIBRARIES(house_twitter_test graph_mining)
 
 ADD_EXECUTABLE(all_restricts_test all_restricts_test.cpp)
 TARGET_LINK_LIBRARIES(all_restricts_test graph_mining)
+
+ADD_EXECUTABLE(our_schedule_our_restricts_test our_schedule_our_restricts_test.cpp)
+TARGET_LINK_LIBRARIES(our_schedule_our_restricts_test graph_mining)
