@@ -676,6 +676,120 @@ void Schedule::performance_modeling(int* best_order, std::vector< std::vector<in
             for(int j = 0; j < size; ++j)
                 cur_adj_mat[INDEX(rank[i], rank[j], size)] = adj_mat[INDEX(i, j, size)];
 
+        std::vector< std::pair<int,int> > restricts;
+        GraphZero_aggressive_optimize(restricts);
+        int restricts_size = restricts.size();
+        std::sort(restricts.begin(), restricts.end());
+        double* sum;
+        sum = new double[restricts_size];
+        for(int i = 0; i < restricts_size; ++i) sum[i] = 0;
+        int* tmp;
+        tmp = new int[size];
+        for(int i = 0; i < size; ++i) tmp[i] = i;
+        do {
+            for(int i = 0; i < restricts_size; ++i)
+                if(tmp[restricts[i].first] > tmp[restricts[i].second]) {
+                    sum[i] += 1;
+                }
+                else break;
+        } while( std::next_permutation(tmp, tmp + size));
+        double total = 1;
+        for(int i = 2; i <= size; ++i) total *= i;
+        for(int i = 0; i < restricts_size; ++i)
+            sum[i] = sum[i] /total;
+        for(int i = restricts_size - 1; i > 0; --i)
+            sum[i] /= sum[i - 1];
+
+        double val = 1;
+        for(int i = 0; i < size; ++i) invariant_size[i].clear();
+        for(int i = size - 1; i >= 0; --i) {
+            int cnt_forward = 0;
+            int cnt_backward = 0;
+            for(int j = 0; j < i; ++j)
+                if(cur_adj_mat[INDEX(j, i, size)])
+                    ++cnt_forward;
+            for(int j = i + 1; j < size; ++j)
+                if(cur_adj_mat[INDEX(j, i, size)])
+                    ++cnt_backward;
+
+            int c = cnt_forward;
+            for(int j = i - 1; j >= 0; --j)
+                if(cur_adj_mat[INDEX(j, i, size)])
+                    invariant_size[j].push_back(c--);
+
+            for(int j = 0; j < invariant_size[i].size(); ++j)
+                if(invariant_size[i][j] > 1) 
+                    val += p_size[invariant_size[i][j] - 1] + p_size[1];
+            for(int j = 0; j < restricts_size; ++j)
+                if(restricts[j].second == i)
+                    val *=  sum[j];
+            val *= p_size[cnt_forward];
+
+        }
+        if( have_best == false || val < min_val) {
+            have_best = true;
+            for(int i = 0; i < size; ++i)
+                best_order[i] = order[i];
+            min_val = val;
+        }
+        delete[] sum;
+        delete[] tmp;
+        delete[] cur_adj_mat;
+
+    }
+
+    delete[] order;
+    delete[] rank;
+    delete[] p_size;
+}
+
+void Schedule::bug_performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, unsigned int e_cnt) {
+    int* order;
+    int* rank;
+
+    double* p_size;
+    int max_degree = get_max_degree();
+    p_size = new double[max_degree];
+
+    double p = e_cnt * 1.0 / v_cnt / v_cnt;
+
+    p_size[0] = v_cnt;
+    for(int i = 1;i < max_degree; ++i) {
+        p_size[i] = p_size[i-1] * p;
+    }
+
+    order = new int[size];
+    rank = new int[size];
+
+    double min_val;
+    bool have_best = false;
+    std::vector<int> invariant_size[size];
+    for(const std::vector<int>& vec : candidates) {
+        for(int i = 0; i < size; ++i)
+            order[i] = vec[i];
+        // check whether it is valid schedule
+        bool is_valid = true;
+        for(int i = 1; i < size; ++i) {
+            bool have_edge = false;
+            for(int j = 0; j < i; ++j)
+                if( adj_mat[INDEX(order[i], order[j], size)]) {
+                    have_edge = true;
+                    break;
+                }
+            if( have_edge == false) {
+                is_valid = false;
+                break;
+            }
+        }
+        if( is_valid == false ) continue;
+        
+        for(int i = 0; i < size; ++i) rank[order[i]] = i;
+        int* cur_adj_mat;
+        cur_adj_mat = new int[size*size];
+        for(int i = 0; i < size; ++i)
+            for(int j = 0; j < size; ++j)
+                cur_adj_mat[INDEX(rank[i], rank[j], size)] = adj_mat[INDEX(i, j, size)];
+
         std::vector< std::vector< std::pair<int,int> > > restricts_vector;
         restricts_generate(cur_adj_mat, restricts_vector);
         for(int restricts_rank = 0; restricts_rank < restricts_vector.size(); ++restricts_rank) {
