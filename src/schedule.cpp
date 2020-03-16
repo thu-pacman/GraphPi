@@ -96,7 +96,8 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
 
     if( use_in_exclusion_optimize) {
        std::vector<int> I;
-       for(int i = 0; i < size; ++i) I[i] = i;
+       I.clear();
+       for(int i = 0; i < size; ++i) I.push_back(i);
        in_exclusion_optimize_num = get_vec_optimize_num(I);
        if( in_exclusion_optimize_num <= 1) {
            printf("Can not use in_exclusion_optimize with this schedule\n");
