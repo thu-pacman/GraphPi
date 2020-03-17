@@ -109,6 +109,44 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
                 adj_mat[INDEX(rank[i], rank[j], size)] = pattern_adj_mat[INDEX(i, j, size)]; 
         delete[] best_order;
     }
+    else {
+        std::vector< int > I;
+        I.clear();
+        for(int i = 0; i < size; ++i) I.push_back(i);
+        
+        std::vector< std::vector< std::pair<int,int> > > restricts_vector;
+
+        if(restricts_type == 1) {
+            restricts_generate(adj_mat, restricts_vector);
+        }
+        else {
+            std::vector< std::pair<int,int> > pairs;
+            GraphZero_aggressive_optimize(pairs);
+
+            restricts_vector.clear();
+            restricts_vector.push_back(pairs);
+        }
+
+        bool have_best = false;
+        double min_val;
+
+        for(const auto& pairs : restricts_vector) {
+            double val;
+            if(restricts_type == 1) {
+                val = our_estimate_schedule_restrict(I, pairs, v_cnt, e_cnt, tri_cnt);
+            }
+            else {
+                val = GraphZero_estimate_schedule_restrict(I, pairs, v_cnt, e_cnt);
+            }
+
+            if(have_best == false || val < min_val) {
+                have_best = true;
+                min_val = val;
+                best_pairs = pairs;
+            }
+        }
+
+    }
 
     if( use_in_exclusion_optimize) {
         std::vector<int> I;
