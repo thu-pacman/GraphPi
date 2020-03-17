@@ -17,11 +17,11 @@ ADD_LIBRARY(graph_mining SHARED ${GraphMiningSrc})
 #ADD_EXECUTABLE(in_exclusion_performance_test in_exclusion_performance_test.cpp)
 #TARGET_LINK_LIBRARIES(in_exclusion_performance_test graph_mining)
 
-ADD_EXECUTABLE(performance_compare_test performance_compare_test.cpp)
-TARGET_LINK_LIBRARIES(performance_compare_test graph_mining)
+#ADD_EXECUTABLE(performance_compare_test performance_compare_test.cpp)
+#TARGET_LINK_LIBRARIES(performance_compare_test graph_mining)
 
-ADD_EXECUTABLE(restricts_printer_test restricts_printer_test.cpp)
-TARGET_LINK_LIBRARIES(restricts_printer_test graph_mining)
+#ADD_EXECUTABLE(restricts_printer_test restricts_printer_test.cpp)
+#TARGET_LINK_LIBRARIES(restricts_printer_test graph_mining)
 
 #ADD_EXECUTABLE(run_brute_force_tc run_brute_force_tc.cpp)
 #TARGET_LINK_LIBRARIES(run_brute_force_tc graph_mining)

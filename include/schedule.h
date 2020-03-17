@@ -10,12 +10,13 @@ class Schedule
 {
 public:
     //TODO : more kinds of constructors to construct different Schedules from one Pattern
-    Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, bool use_in_exclusion_optimize, int v_cnt, unsigned int e_cnt, long long tri_cnt = 0);
+    Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, int restricts_type, bool use_in_exclusion_optimize, int v_cnt, unsigned int e_cnt, long long tri_cnt = 0);
     // performance_modeling type = 0 : not use modeling
     //                      type = 1 : use our modeling
     //                      type = 2 : use GraphZero's modeling
-    //                      type = 3 : use new modeling
-    //when performance_modeling_type == 1 , we can additonally use in-exclusion optimize by set use_in_exclusion_optimize = 1
+    // restricts_type = 0 : not use restricts
+    //                = 1 : use our restricts
+    //                = 2 : use GraphZero's restricts
     Schedule(const int* _adj_mat, int _size);
     ~Schedule();
     inline int get_total_prefix_num() const { return total_prefix_num;}
@@ -50,6 +51,7 @@ public:
 
     std::vector< std::vector< std::vector<int> > >in_exclusion_optimize_group;
     std::vector< int > in_exclusion_optimize_val;
+    std::vector< std::pair<int,int> > restrict_pair;
 private:
     int* adj_mat;
     int* father_prefix_id;
@@ -72,10 +74,15 @@ private:
     void bug_performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, unsigned int e_cnt);
     void new_performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, unsigned int e_cnt, long long tri_cnt);
     void GraphZero_performance_modeling(int* best_order, int v_cnt, unsigned int e_cnt);
-    void get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, int* in_exclusion_val);
-    
+
+    double our_estimate_schedule_restrict(const std::vector<int> &order, const std::vector< std::pair<int,int> > &pairs, int v_cnt, unsigned int e_cnt, long long tri_cnt);
+    double GraphZero_estimate_schedule_restrict(const std::vector<int> &order, const std::vector< std::pair<int,int> > &pairs, int v_cnt, unsigned int e_cnt);
+
+    void get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, int* in_exclusion_val); 
     //use principle of inclusion-exclusion to optimize
     void init_in_exclusion_optimize();
     
     int get_vec_optimize_num(const std::vector<int> &vec);
+
+    void remove_invalid_permutation(std::vector< std::vector<int> > &candidate_permutations);
 };
