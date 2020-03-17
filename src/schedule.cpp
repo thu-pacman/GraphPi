@@ -694,6 +694,7 @@ void Schedule::performance_modeling(int* best_order, std::vector< std::vector<in
                 cur_adj_mat[INDEX(rank[i], rank[j], size)] = adj_mat[INDEX(i, j, size)];
 
         std::vector< std::pair<int,int> > restricts;
+        //TODO BUG!!!!!
         GraphZero_aggressive_optimize(restricts);
         int restricts_size = restricts.size();
         std::sort(restricts.begin(), restricts.end());
