@@ -165,7 +165,7 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
             else {
                 val = GraphZero_estimate_schedule_restrict(I, pairs, v_cnt, e_cnt);
             }
-
+            printf("%.10lf\n", val);
             if(have_best == false || val < min_val) {
                 have_best = true;
                 min_val = val;
@@ -1519,8 +1519,12 @@ double Schedule::our_estimate_schedule_restrict(const std::vector<int> &order, c
         for(int j = 0; j < restricts_size; ++j)
             if(restricts[j].second == i)
                 val *=  sum[j];
-        val *= p_size[1] * pp_size[ cnt_forward - 1 ];
-
+        if( i ) {
+            val *= p_size[1] * pp_size[ cnt_forward - 1 ];
+        }
+        else {
+            val *= p_size[0];
+        }
     }
     delete[] cur_adj_mat;
 
