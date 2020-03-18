@@ -106,7 +106,8 @@ int main(int argc,char *argv[]) {
 
     printf("Load data success!\n");
     fflush(stdout);
-    int rank = 0;
+/*
+    int rank = atoi(argv[1]);
 
     for(int size = 3; size < 7; ++size) {
         MotifGenerator mg(size);
@@ -114,17 +115,25 @@ int main(int argc,char *argv[]) {
         int len = patterns.size();
         for(int i = rank; i < patterns.size(); i += 20) {
             Pattern& p = patterns[i];
-            test_pattern(g, p);
+            test(g, p);
         }
     }
+*/
+    Pattern p_qg3(PatternType::QG3);
+    Pattern p_rec(PatternType::Rectangle);
+    Pattern p_pen(PatternType::Pentagon);
+    Pattern p_house(PatternType::House);
+    Pattern p_hour(PatternType::Hourglass);
+    Pattern p_cyc(PatternType::Cycle_6_Tri);
+    Pattern p_c7m(PatternType::Clique_7_Minus);
 
-
-    //    test(g, PatternType::QG3);
-    //    test(g, PatternType::Pentagon);
-    //    test(g, PatternType::House);
-    //    test(g, PatternType::Hourglass);
-    //    test(g, PatternType::Cycle_6_Tri);
-    //    test(g, PatternType::Clique_7_Minus);
+        test(g, p_qg3);
+        test(g, p_rec);
+        test(g, p_pen);
+        test(g, p_house);
+        test(g, p_hour);
+        test(g, p_cyc);
+        test(g, p_c7m);
 
 
     delete g;

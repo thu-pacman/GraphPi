@@ -55,6 +55,19 @@ void test_pattern(Graph* g, Pattern &pattern) {
             printf("(%d,%d)", p.first, p.second);
         puts("");
     }
+    {
+        std::vector< std::pair<int,int> > pairs;
+        Schedule cur_schedule(pattern, is_pattern_valid, 0, 1, use_in_exclusion_optimize, g->v_cnt, g->e_cnt, tri_cnt);
+        double t1 = get_wall_time();
+        long long ans = g->pattern_matching(cur_schedule, thread_num);
+        double t2 = get_wall_time();
+        printf("ans %lld time %.6lf\n", ans, t2 - t1);
+        pairs = cur_schedule.restrict_pair;
+        printf("%d ", pairs.size());
+        for(const auto& p : pairs)
+            printf("(%d,%d)", p.first, p.second);
+        puts("");
+    }
 }
 
 int main(int argc,char *argv[]) {
@@ -74,12 +87,13 @@ int main(int argc,char *argv[]) {
     printf("Load data success!\n");
     fflush(stdout);
 
-    Pattern pattern(4);
+    Pattern pattern(5);
     pattern.add_edge(0, 1);
-    pattern.add_edge(0, 3);
+    pattern.add_edge(0, 4);
     pattern.add_edge(1, 2);
     pattern.add_edge(1, 3);
     pattern.add_edge(2, 3);
+    pattern.add_edge(2, 4);
     test_pattern(g, pattern);
 
     delete g;
