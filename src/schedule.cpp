@@ -165,7 +165,6 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
             else {
                 val = GraphZero_estimate_schedule_restrict(I, pairs, v_cnt, e_cnt);
             }
-            printf("%.10lf\n", val);
             if(have_best == false || val < min_val) {
                 have_best = true;
                 min_val = val;
