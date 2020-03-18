@@ -58,26 +58,32 @@ int main(int argc,char *argv[]) {
     printf("Load data success!\n");
     fflush(stdout);
 
+    Pattern p(PatternType::Cycle_6_Tri);
+    test_pattern(g, p, 1, 1);
+    test_pattern(g, p, 1, 2);
+    test_pattern(g, p, 2, 1);
+    test_pattern(g, p, 2, 2);
 
-    int rank = 0;
+    /*
+       int rank = 0;
 
-    for(int size = 3; size < 7; ++size) {
-        MotifGenerator mg(size);
-        std::vector<Pattern> patterns = mg.generate();
-        int len = patterns.size();
-        int l = len / 10 * rank;
-        int r = len / 10 * (rank + 1);
-        if( rank == 9) r = len;
-        for(int i = l; i < r; ++i) {
-            Pattern& p = patterns[i];
-            printf("%d\n", size);
-            fflush(stdout);
-            test_pattern(g, p, 1, 1);
-            test_pattern(g, p, 1, 2);
-            test_pattern(g, p, 2, 1);
-            test_pattern(g, p, 2, 2);
-        }
-    }
-
+       for(int size = 3; size < 7; ++size) {
+       MotifGenerator mg(size);
+       std::vector<Pattern> patterns = mg.generate();
+       int len = patterns.size();
+       int l = len / 10 * rank;
+       int r = len / 10 * (rank + 1);
+       if( rank == 9) r = len;
+       for(int i = l; i < r; ++i) {
+       Pattern& p = patterns[i];
+       printf("%d\n", size);
+       fflush(stdout);
+       test_pattern(g, p, 1, 1);
+       test_pattern(g, p, 1, 2);
+       test_pattern(g, p, 2, 1);
+       test_pattern(g, p, 2, 2);
+       }
+       }
+     */
     delete g;
 }
