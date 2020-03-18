@@ -27,6 +27,16 @@ void test_pattern(Graph* g, Pattern &pattern) {
     if(schedule_our.get_multiplicity() == 1) return;
     auto pairs_our = schedule_our.restrict_pair;
     auto pairs_gz  = schedule_gz.restrict_pair;
+    schedule_our.print_schedule();
+    printf("%d ", pairs_our.size());
+    for(const auto& p : pairs_our)
+        printf("(%d,%d)", p.first, p.second);
+    puts("");
+    printf("%d ", pairs_gz.size());
+    for(const auto& p : pairs_gz)
+        printf("(%d,%d)", p.first, p.second);
+    puts("");
+    fflush(stdout); 
     if(pairs_our.size() == pairs_gz.size()) {
         std::sort(pairs_our.begin(), pairs_our.end());
         std::sort(pairs_gz.begin(), pairs_gz.end());
@@ -127,13 +137,13 @@ int main(int argc,char *argv[]) {
     Pattern p_cyc(PatternType::Cycle_6_Tri);
     Pattern p_c7m(PatternType::Clique_7_Minus);
 
-        test(g, p_qg3);
-        test(g, p_rec);
-        test(g, p_pen);
+       // test(g, p_qg3);
+     //   test(g, p_rec);
+   //     test(g, p_pen);
         test(g, p_house);
-        test(g, p_hour);
-        test(g, p_cyc);
-        test(g, p_c7m);
+     //   test(g, p_hour);
+     //   test(g, p_cyc);
+     //   test(g, p_c7m);
 
 
     delete g;

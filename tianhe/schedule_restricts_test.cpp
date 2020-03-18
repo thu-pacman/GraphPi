@@ -18,19 +18,17 @@ void test_pattern(Graph* g, Pattern &pattern, int performance_modeling_type, int
     bool is_pattern_valid;
     bool use_in_exclusion_optimize = false;
     
-    double t3 = get_wall_time();
     Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, restricts_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt, tri_cnt);
     assert(is_pattern_valid);
 
     if(schedule.get_multiplicity() == 1) return;
 
-    double t4 = get_wall_time();
     
     t1 = get_wall_time();
     long long ans = g->pattern_matching(schedule, thread_num);
     t2 = get_wall_time();
 
-    printf("ans %lld, %.6lf,%.6lf\n", ans,t4 - t3, t2 - t1);
+    printf("ans %lld,%.6lf\n", ans, t2 - t1);
     schedule.print_schedule();
     const auto& pairs = schedule.restrict_pair;
     printf("%d ",pairs.size());
@@ -57,33 +55,21 @@ int main(int argc,char *argv[]) {
 
     printf("Load data success!\n");
     fflush(stdout);
+    
+    int rank = atoi(argv[1]);
 
-    Pattern p(PatternType::Cycle_6_Tri);
-    test_pattern(g, p, 1, 1);
-    test_pattern(g, p, 1, 2);
-    test_pattern(g, p, 2, 1);
-    test_pattern(g, p, 2, 2);
+    for(int size = 3; size < 7; ++size) {
+        MotifGenerator mg(size);
+        std::vector<Pattern> patterns = mg.generate();
+        int len = patterns.size();
+        for(int i = rank; i < patterns.size(); i += 20) {
+            Pattern& p = patterns[i];
+            test_pattern(g, p, 1, 1);
+            test_pattern(g, p, 1, 2);
+            test_pattern(g, p, 2, 1);
+            test_pattern(g, p, 2, 2);
+        }
+    }
 
-    /*
-       int rank = 0;
-
-       for(int size = 3; size < 7; ++size) {
-       MotifGenerator mg(size);
-       std::vector<Pattern> patterns = mg.generate();
-       int len = patterns.size();
-       int l = len / 10 * rank;
-       int r = len / 10 * (rank + 1);
-       if( rank == 9) r = len;
-       for(int i = l; i < r; ++i) {
-       Pattern& p = patterns[i];
-       printf("%d\n", size);
-       fflush(stdout);
-       test_pattern(g, p, 1, 1);
-       test_pattern(g, p, 1, 2);
-       test_pattern(g, p, 2, 1);
-       test_pattern(g, p, 2, 2);
-       }
-       }
-     */
     delete g;
 }
