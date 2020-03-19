@@ -10,19 +10,16 @@
 #include <string>
 #include <algorithm>
 
-void test_pattern(Graph* g, Pattern &pattern, int performance_modeling_type, int restricts_type) {
+void test_pattern(Graph* g, const Pattern &pattern, int performance_modeling_type, int restricts_type, bool use_in_exclusion_optimize = false) {
     long long tri_cnt = 7515023;
     int thread_num = 24;
     double t1,t2;
     
     bool is_pattern_valid;
-    bool use_in_exclusion_optimize = false;
-    
     Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, restricts_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt, tri_cnt);
     assert(is_pattern_valid);
 
     if(schedule.get_multiplicity() == 1) return;
-
     
     t1 = get_wall_time();
     long long ans = g->pattern_matching(schedule, thread_num);
@@ -56,9 +53,8 @@ int main(int argc,char *argv[]) {
     printf("Load data success!\n");
     fflush(stdout);
 
-    int size = atoi(argv[1]);
-    Pattern p(size, argv[2]);
-    p.print();
+    Pattern p(atoi(argv[1]), argv[2]);
+    test_pattern(g, p, 1, 1, true);
     test_pattern(g, p, 1, 1);
     test_pattern(g, p, 1, 2);
     test_pattern(g, p, 2, 1);
