@@ -55,7 +55,16 @@ int main(int argc,char *argv[]) {
 
     printf("Load data success!\n");
     fflush(stdout);
-    
+
+    int size = atoi(argv[1]);
+    Pattern p(size, argv[2]);
+    p.print();
+    test_pattern(g, p, 1, 1);
+    test_pattern(g, p, 1, 2);
+    test_pattern(g, p, 2, 1);
+    test_pattern(g, p, 2, 2);
+
+/*    
     int rank = atoi(argv[1]);
 
     for(int size = 3; size < 7; ++size) {
@@ -70,6 +79,18 @@ int main(int argc,char *argv[]) {
             test_pattern(g, p, 2, 2);
         }
     }
-
+*/
+/*
+    Pattern p(6);
+    p.add_edge(0, 1);
+    p.add_edge(0, 2);
+    p.add_edge(0, 3);
+    p.add_edge(1, 4);
+    p.add_edge(1, 5);
+    test_pattern(g, p, 1, 1);
+    test_pattern(g, p, 1, 2);
+    test_pattern(g, p, 2, 1);
+    test_pattern(g, p, 2, 2);
+*/
     delete g;
 }
