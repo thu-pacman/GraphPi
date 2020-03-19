@@ -19,6 +19,17 @@ Pattern::Pattern(int _size, bool clique)
     }
 }
 
+Pattern::Pattern(int _size, char *buffer) {
+    size = _size;
+    adj_mat = new int[size * size];
+    memset(adj_mat, 0, size * size * sizeof(int));
+
+    for(int i = 0; i < size; ++i)
+        for(int j = 0; j < size; ++j)
+            if(buffer[INDEX(i,j,size)] == '1')
+                add_edge(i,j);
+}
+
 Pattern::~Pattern()
 {
     delete[] adj_mat;
