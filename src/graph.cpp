@@ -258,7 +258,6 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
             subtraction_set.pop_back();
         }
         delete[] vertex_set;
-
         // TODO : Computing multiplicty for a pattern
         global_ans += local_ans;
         

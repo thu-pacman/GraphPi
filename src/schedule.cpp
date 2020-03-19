@@ -184,8 +184,12 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
             in_exclusion_optimize_num = 0;
         }
         else {
+            printf("use in_exclusion_optimize with size %d\n", in_exclusion_optimize_num);
             init_in_exclusion_optimize();
         }
+    }
+    else {
+            in_exclusion_optimize_num = 0;
     }
 
     // The I-th loop consists of at most the intersection of i-1 VertexSet.
