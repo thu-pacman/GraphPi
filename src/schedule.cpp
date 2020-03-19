@@ -1470,9 +1470,7 @@ double Schedule::our_estimate_schedule_restrict(const std::vector<int> &order, c
 
     std::vector< std::pair<int,int> > restricts = pairs;
     int restricts_size = restricts.size();
-    for(auto& p : restricts) std::swap(p.first,p.second);
     std::sort(restricts.begin(), restricts.end());
-    for(auto& p : restricts) std::swap(p.first,p.second);
 
     double sum[restricts_size];
     for(int i = 0; i < restricts_size; ++i) sum[i] = 0;
@@ -1554,9 +1552,7 @@ double Schedule::GraphZero_estimate_schedule_restrict(const std::vector<int> &or
 
     std::vector< std::pair<int,int> > restricts = pairs;
     int restricts_size = restricts.size();
-    for(auto& p : restricts) std::swap(p.first,p.second);
     std::sort(restricts.begin(), restricts.end());
-    for(auto& p : restricts) std::swap(p.first,p.second);
     
     double sum[restricts_size];
     for(int i = 0; i < restricts_size; ++i) sum[i] = 0;
