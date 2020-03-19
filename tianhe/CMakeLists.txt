@@ -1,5 +1,5 @@
-#ADD_EXECUTABLE(all_schedule_test all_schedule_test.cpp)
-#TARGET_LINK_LIBRARIES(all_schedule_test graph_mining)
+ADD_EXECUTABLE(all_schedule_test all_schedule_test.cpp)
+TARGET_LINK_LIBRARIES(all_schedule_test graph_mining)
 
 ADD_EXECUTABLE(schedule_restricts_test schedule_restricts_test.cpp)
 TARGET_LINK_LIBRARIES(schedule_restricts_test graph_mining)
