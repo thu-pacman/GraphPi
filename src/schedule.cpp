@@ -70,29 +70,34 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
 
             restricts_vector.clear();
 
-                if(restricts_type == 1) {
-                    restricts_generate(cur_adj_mat, restricts_vector);
-                }
-                else {
-                    Schedule schedule(cur_adj_mat, size);
+            if(restricts_type == 1) {
+                restricts_generate(cur_adj_mat, restricts_vector);
+            }
+            else {
+                Schedule schedule(cur_adj_mat, size);
 
-                    std::vector< std::pair<int,int> > pairs;
-                    schedule.GraphZero_aggressive_optimize(pairs);
+                std::vector< std::pair<int,int> > pairs;
+                schedule.GraphZero_aggressive_optimize(pairs);
 
-                    restricts_vector.clear();
-                    restricts_vector.push_back(pairs);
-                }
+                restricts_vector.clear();
+                restricts_vector.push_back(pairs);
+            }
 
             if( restricts_vector.size() == 0) {
                 std::vector< std::pair<int,int> > Empty;
                 Empty.clear();
-                
+
                 double val;
                 if(performance_modeling_type == 1) {
                     val = our_estimate_schedule_restrict(vec, Empty, v_cnt, e_cnt, tri_cnt);
                 }
                 else {
-                    val = GraphZero_estimate_schedule_restrict(vec, Empty, v_cnt, e_cnt);
+                    if(performance_modeling_type == 2) {
+                        val = GraphZero_estimate_schedule_restrict(vec, Empty, v_cnt, e_cnt);
+                    }
+                    else {
+                        val = Naive_estimate_schedule_restrict(vec, Empty, v_cnt, e_cnt);
+                    }
                 }
 
                 if(have_best == false || val < min_val) {
@@ -110,7 +115,12 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
                     val = our_estimate_schedule_restrict(vec, pairs, v_cnt, e_cnt, tri_cnt);
                 }
                 else {
-                    val = GraphZero_estimate_schedule_restrict(vec, pairs, v_cnt, e_cnt);
+                    if(performance_modeling_type == 2) {
+                        val = GraphZero_estimate_schedule_restrict(vec, pairs, v_cnt, e_cnt);
+                    }
+                    else {
+                        val = Naive_estimate_schedule_restrict(vec, pairs, v_cnt, e_cnt);
+                    }
                 }
 
                 if(have_best == false || val < min_val) {
@@ -1627,6 +1637,66 @@ double Schedule::GraphZero_estimate_schedule_restrict(const std::vector<int> &or
 
     }
     
+    delete[] cur_adj_mat;
+
+    return val;
+}
+
+double Schedule::Naive_estimate_schedule_restrict(const std::vector<int> &order, const std::vector< std::pair<int,int> > &pairs, int v_cnt, unsigned int e_cnt) {
+
+    double p = e_cnt * 2.0 / v_cnt / v_cnt;
+
+    int rank[size];
+    for(int i = 0; i < size; ++i) rank[order[i]] = i;
+    
+    int* cur_adj_mat;
+    cur_adj_mat = new int[size*size];
+    for(int i = 0; i < size; ++i)
+        for(int j = 0; j < size; ++j)
+            cur_adj_mat[INDEX(rank[i], rank[j], size)] = adj_mat[INDEX(i, j, size)];
+    
+    std::vector< std::pair<int,int> > restricts = pairs;
+    int restricts_size = restricts.size();
+    std::sort(restricts.begin(), restricts.end());
+    
+    double sum[restricts_size];
+    for(int i = 0; i < restricts_size; ++i) sum[i] = 0;
+    int tmp[size];
+    
+    for(int i = 0; i < size; ++i) tmp[i] = i;
+    do {
+        for(int i = 0; i < restricts_size; ++i)
+            if(tmp[restricts[i].first] > tmp[restricts[i].second]) {
+                sum[i] += 1;
+            }
+            else break;
+    } while( std::next_permutation(tmp, tmp + size));
+    
+    double total = 1;
+    for(int i = 2; i <= size; ++i) total *= i;
+    
+    for(int i = 0; i < restricts_size; ++i)
+        sum[i] = sum[i] /total;
+    for(int i = restricts_size - 1; i > 0; --i)
+        sum[i] /= sum[i - 1];
+
+    double val = 1;
+    for(int i = size - 1; i >= 0; --i) {
+        int cnt_forward = 0;
+        for(int j = 0; j < i; ++j)
+            if(cur_adj_mat[INDEX(j, i, size)])
+                ++cnt_forward;
+
+        for(int j = 0; j < restricts_size; ++j)
+            if(restricts[j].second == i)
+                val *=  sum[j];
+        val *= v_cnt;
+        for(int j = 0; j < i - cnt_forward; ++j)
+            val *= (1-p);
+        for(int j = 0; j < cnt_forward; ++j)
+            val *= p;
+    }
+
     delete[] cur_adj_mat;
 
     return val;

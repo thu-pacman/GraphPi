@@ -14,6 +14,7 @@ public:
     // performance_modeling type = 0 : not use modeling
     //                      type = 1 : use our modeling
     //                      type = 2 : use GraphZero's modeling
+    //                      type = 3 : use naive modeling
     // restricts_type = 0 : not use restricts
     //                = 1 : use our restricts
     //                = 2 : use GraphZero's restricts
@@ -77,6 +78,7 @@ private:
 
     double our_estimate_schedule_restrict(const std::vector<int> &order, const std::vector< std::pair<int,int> > &pairs, int v_cnt, unsigned int e_cnt, long long tri_cnt);
     double GraphZero_estimate_schedule_restrict(const std::vector<int> &order, const std::vector< std::pair<int,int> > &pairs, int v_cnt, unsigned int e_cnt);
+    double Naive_estimate_schedule_restrict(const std::vector<int> &order, const std::vector< std::pair<int,int> > &paris, int v_cnt, unsigned int e_cnt);
 
     void get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, int* in_exclusion_val); 
     //use principle of inclusion-exclusion to optimize
