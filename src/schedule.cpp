@@ -344,11 +344,30 @@ int Schedule::find_father_prefix(int data_size, const int* data)
 void Schedule::add_restrict(const std::vector< std::pair<int, int> >& restricts)
 {
     restrict_pair = restricts;
+    for(unsigned int i = 0; i < restrict_pair.size(); ) {
+        bool tag = true;
+        for(unsigned int j = 0; j < restrict_pair.size(); ++j) {
+            if(i != j && restrict_pair[j].first == restrict_pair[i].first) 
+                for(unsigned int k = 0; k < restrict_pair.size(); ++k)
+                    if( i != k && j != k && restrict_pair[k].second == restrict_pair[i].second && restrict_pair[j].second == restrict_pair[k].first ) {
+                        tag = false;
+                        break;
+                    }
+            if(tag == false) break;
+        }
+        if(tag == false) {
+            restrict_pair.erase(restrict_pair.begin() + i);
+        }
+        else ++i;
+    }
+
+
+
     int max_prefix_num = size * (size - 1) / 2;
     memset(restrict_last, -1, size * sizeof(int));
     memset(restrict_next, -1, max_prefix_num * sizeof(int));
     total_restrict_num = 0;
-    for (const auto& p : restricts)
+    for (const auto& p : restrict_pair)
     {
         // p.first must be greater than p.second
         restrict_index[total_restrict_num] = p.first;
@@ -433,7 +452,7 @@ void Schedule::aggressive_optimize(std::vector< std::pair<int, int> >& ordered_p
             for (const std::vector<int>& v : permutation_groups[i])
                 if (v.size() == 2)
                 {
-                   ++two_element_number;
+                    ++two_element_number;
                     found_pair = std::pair<int ,int>(v[0], v[1]);
                     break;
                 }
