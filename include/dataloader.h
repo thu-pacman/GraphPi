@@ -10,7 +10,9 @@ enum DataType {
     complete8,
     LiveJournal,
     MiCo,
-    Twitter
+    Twitter,
+    CiteSeer,
+    Wiki_Vote
 };
 
 class DataLoader {
