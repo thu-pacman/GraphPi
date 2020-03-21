@@ -1,20 +1,2 @@
-ADD_EXECUTABLE(all_schedule_test all_schedule_test.cpp)
-TARGET_LINK_LIBRARIES(all_schedule_test graph_mining)
-
-ADD_EXECUTABLE(baseline_test baseline_test.cpp)
-TARGET_LINK_LIBRARIES(baseline_test graph_mining)
-
-ADD_EXECUTABLE(schedule_restricts_test schedule_restricts_test.cpp)
-TARGET_LINK_LIBRARIES(schedule_restricts_test graph_mining)
-
-ADD_EXECUTABLE(restricts_compare_test restricts_compare_test.cpp)
-TARGET_LINK_LIBRARIES(restricts_compare_test graph_mining)
-
-#ADD_EXECUTABLE(house_twitter_test house_twitter_test.cpp)
-#TARGET_LINK_LIBRARIES(house_twitter_test graph_mining)
-
-ADD_EXECUTABLE(all_restricts_test all_restricts_test.cpp)
-TARGET_LINK_LIBRARIES(all_restricts_test graph_mining)
-
-#ADD_EXECUTABLE(our_schedule_our_restricts_test our_schedule_our_restricts_test.cpp)
-#TARGET_LINK_LIBRARIES(our_schedule_our_restricts_test graph_mining)
+ADD_EXECUTABLE(in_exclusion_optimize_test in_exclusion_optimize_test.cpp)
+TARGET_LINK_LIBRARIES(in_exclusion_optimize_test graph_mining)
