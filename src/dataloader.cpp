@@ -24,6 +24,35 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
     }
     printf("Load begin in %s\n",path);
     g = new Graph();
+
+    //load triangle counting information
+    switch(type) {
+        case DataType::Patents : {
+            g->tri_cnt = Patents_tri_cnt;
+            break;
+        }
+        case DataType::LiveJournal : {
+            g->tri_cnt = LiveJournal_tri_cnt;
+            break;
+        }
+        case DataType::MiCo : {
+            g->tri_cnt = MiCo_tri_cnt;
+            break;
+        }
+        case DataType::CiteSeer : {
+            g->tri_cnt = CiteSeer_tri_cnt;
+            break;
+        }
+        case DataType::Wiki_Vote : {
+            g->tri_cnt = Wiki_Vote_tri_cnt;
+            break;
+        }
+        default : {
+            g->tri_cnt = -1;
+            break;
+        }
+    }
+
     scanf("%d%u",&g->v_cnt,&g->e_cnt);
     int* degree = new int[g->v_cnt];
     memset(degree, 0, g->v_cnt * sizeof(int));

@@ -8,6 +8,12 @@
 
 Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, int restricts_type, bool use_in_exclusion_optimize ,int v_cnt, unsigned int e_cnt, long long tri_cnt)
 {
+    if( performance_modeling_type != 0 && tri_cnt == -1) {
+        printf("Fatal: Can not use performance modeling if not have triangle number of this dataset.\n");
+        fflush(stdout);
+        assert(0);
+    }
+
     is_pattern_valid = true;
     size = pattern.get_size();
     adj_mat = new int[size * size];

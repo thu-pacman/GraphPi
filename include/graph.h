@@ -7,7 +7,7 @@ class Graph {
 public:
     int v_cnt; // number of vertex
     unsigned int e_cnt; // number of edge
-    long long tri_cnt;
+    long long tri_cnt; // number of triangle
 
     int *edge; // edges
     unsigned int *vertex; // v_i's neighbor is in edge[ vertex[i], vertex[i+1]-1]
