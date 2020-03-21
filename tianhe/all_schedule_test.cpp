@@ -11,29 +11,15 @@
 #include <algorithm>
 
 void test_pattern(Graph* g, Pattern &pattern) {
+    std::vector<double> speed_up;
+    speed_up.clear();
+
     int thread_num = 24;
     double t1,t2,t3,t4;
-    
+
     bool is_pattern_valid;
     int performance_modeling_type;
     bool use_in_exclusion_optimize;
-
-    Schedule schedule_best(pattern, is_pattern_valid, 1, 1, true, g->v_cnt, g->e_cnt, g->tri_cnt);
-    assert(is_pattern_valid);
-    Schedule schedule_norm(pattern, is_pattern_valid, 1, 1, false, g->v_cnt, g->e_cnt, g->tri_cnt);
-    assert(is_pattern_valid);
-
-    t1 = get_wall_time();
-    long long ans = g->pattern_matching(schedule_best, thread_num);
-    t2 = get_wall_time();
-
-    t3 = get_wall_time();
-    long long ans2 = g->pattern_matching(schedule_norm, thread_num);
-    t4 = get_wall_time();
-
-    printf("%lld,%lld,%.6lf,%.6lf\n", ans, ans2, t2 - t1, t4 - t3);
-    schedule_best.print_schedule();
-    fflush(stdout);
 
     int size = pattern.get_size();
     const int* adj_mat = pattern.get_adj_mat_ptr();
@@ -104,21 +90,40 @@ void test_pattern(Graph* g, Pattern &pattern) {
             printf("(%d,%d)", p.first, p.second);
         puts("");
         
-        fflush(stdout); 
-    } while( std::next_permutation(rank, rank + size));
+        fflush(stdout);
+        
+        speed_up.push_back((t4-t3)/(t2-t1));
 
+    } while( std::next_permutation(rank, rank + size));
+    
+    double cnt = 0;
+    double mx = -1;
+    for(const auto& s : speed_up) {
+        cnt += s;
+        mx = std::max(mx, s);
+    }
+    printf("%u\n", speed_up.size());
+    if(speed_up.size() == 0) return;
+    printf("%.6lf %.6lf\n", cnt / speed_up.size(), mx);
 }
 
 int main(int argc,char *argv[]) {
     Graph *g;
     DataLoader D;
 
-    std::string type = "Patents";
-    std::string path = "/home/zms/patents_input";
+    const std::string data_type = argv[1];
+    const std::string path = argv[2];
+    
+    int size = atoi(argv[3]);
+    char* adj_mat = argv[4];
+    
     DataType my_type;
-    if(type == "Patents") my_type = DataType::Patents;
-    else {
-        printf("invalid DataType!\n");
+
+    GetDataType(my_type, data_type);
+
+    if( my_type == DataType::Invalid) {
+        printf("Dataset not found!\n");
+        return 0;
     }
 
     assert(D.load_data(g,my_type,path.c_str())==true); 
@@ -126,8 +131,8 @@ int main(int argc,char *argv[]) {
     printf("Load data success!\n");
     fflush(stdout);
 
-    Pattern pattern(atoi(argv[1]), argv[2]);
-    test_pattern(g, pattern);
-
+    Pattern p(size, adj_mat);
+    test_pattern(g, p);
+    
     delete g;
 }
