@@ -59,6 +59,7 @@ int main(int argc,char *argv[]) {
 
     Pattern p(size, adj_mat);
     test_pattern(g, p, 1, 1, true);
+    test_pattern(g, p, 1, 1, false);
     
     delete g;
 }
