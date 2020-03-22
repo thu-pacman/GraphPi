@@ -1,3 +1,6 @@
+ADD_EXECUTABLE(baseline_test baseline_test.cpp)
+TARGET_LINK_LIBRARIES(baseline_test graph_mining)
+
 ADD_EXECUTABLE(in_exclusion_optimize_test in_exclusion_optimize_test.cpp)
 TARGET_LINK_LIBRARIES(in_exclusion_optimize_test graph_mining)
 

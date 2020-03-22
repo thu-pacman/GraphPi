@@ -57,9 +57,9 @@ int main(int argc,char *argv[]) {
     printf("Load data success!\n");
     fflush(stdout);
 
-    Pattern p(size, adj_mat);
-    test_pattern(g, p, 1, 1, true);
-    test_pattern(g, p, 1, 1, false);
-    
+//    Pattern p(size, adj_mat);
+    Pattern p(3, true);
+    test_pattern(g, p, 0, 2, false);
+//    test_pattern(g, p, 1, 1);  
     delete g;
 }

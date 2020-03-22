@@ -48,7 +48,7 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
             break;
         }
         case DataType::Orkut : {
-            g->tri_Cnt = Orkut_tri_cnt;
+            g->tri_cnt = Orkut_tri_cnt;
             break;
         }
         default : {

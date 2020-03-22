@@ -11,16 +11,13 @@
 #include <algorithm>
 
 void test_pattern(Graph* g, const Pattern &pattern, int performance_modeling_type, int restricts_type, bool use_in_exclusion_optimize = false) {
-    long long tri_cnt = 7515023;
     int thread_num = 24;
     double t1,t2;
     
     bool is_pattern_valid;
-    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, restricts_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt, tri_cnt);
+    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, restricts_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt, g->tri_cnt);
     assert(is_pattern_valid);
 
-    if(schedule.get_multiplicity() == 1) return;
-    
     t1 = get_wall_time();
     long long ans = g->pattern_matching(schedule, thread_num);
     t2 = get_wall_time();
@@ -45,11 +42,16 @@ int main(int argc,char *argv[]) {
     
     int size = atoi(argv[3]);
     char* adj_mat = argv[4];
+
+    int test_type = atoi(argv[5]);
     
     DataType my_type;
-    if(type == "Patents") my_type = DataType::Patents;
-    else {
-        printf("invalid DataType!\n");
+    
+    GetDataType(my_type, type);
+
+    if(my_type == DataType::Invalid) {
+        printf("Dataset not found!\n");
+        return 0;
     }
 
     assert(D.load_data(g,my_type,path.c_str())==true); 
@@ -58,8 +60,7 @@ int main(int argc,char *argv[]) {
     fflush(stdout);
 
     Pattern p(size, adj_mat);
-    test_pattern(g, p, 2, 2);
-    test_pattern(g, p, 3, 2);
+    test_pattern(g, p, test_type, test_type);
     
     delete g;
 }
