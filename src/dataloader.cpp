@@ -47,6 +47,10 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
             g->tri_cnt = Wiki_Vote_tri_cnt;
             break;
         }
+        case DataType::Orkut : {
+            g->tri_Cnt = Orkut_tri_cnt;
+            break;
+        }
         default : {
             g->tri_cnt = -1;
             break;
