@@ -234,6 +234,8 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
     long long global_ans = 0;
 #pragma omp parallel num_threads(thread_count) reduction(+: global_ans)
     {
+        double start_time = get_wall_time();
+        double current_time;
         VertexSet* vertex_set = new VertexSet[schedule.get_total_prefix_num()];
         VertexSet subtraction_set;
         VertexSet tmp_set;
@@ -257,6 +259,14 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
             else
                 pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, 1, clique);
             subtraction_set.pop_back();
+            if( (vertex & (-vertex)) == (1<<15) ) {
+                current_time = get_wall_time();
+                if( current_time - start_time > max_running_time) {
+                    printf("TIMEOUT!\n");
+                    fflush(stdout);
+                    assert(0);
+                }
+            }
         }
         delete[] vertex_set;
         // TODO : Computing multiplicty for a pattern
@@ -291,7 +301,8 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
 */
 /*
     //Case: in_exclusion_optimize_num = 3
-    if( depth == schedule.get_size() - in_exclusion_optimize_num && in_exclusion_optimize_num == 3) { 
+    if( depth == schedule.get_size() - 3 && schedule.get_in_exclusion_optimize_num() == 3) { 
+        int in_exclusion_optimize_num = 3;
         int loop_set_prefix_ids[ in_exclusion_optimize_num];
         for(int i = 0; i < in_exclusion_optimize_num; ++i)
             loop_set_prefix_ids[i] = schedule.get_loop_set_prefix_id( depth + i );

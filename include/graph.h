@@ -1,6 +1,7 @@
 #pragma once
 #include "schedule.h"
 #include "vertex_set.h"
+#include <assert.h>
 
 class Graphmpi;
 class Graph {
@@ -8,6 +9,7 @@ public:
     int v_cnt; // number of vertex
     unsigned int e_cnt; // number of edge
     long long tri_cnt; // number of triangle
+    double max_running_time = 60 * 60 * 24; // second
 
     int *edge; // edges
     unsigned int *vertex; // v_i's neighbor is in edge[ vertex[i], vertex[i+1]-1]
