@@ -3,27 +3,39 @@
 #include <queue>
 #include <atomic>
 
+class Bx2kQueue {
+public:
+    void push(int);
+    void pop();
+    int front();
+    bool empty();
+
+private:
+    static const int N = 256;
+    int a[N];
+    unsigned char h = 0, t = 0;
+};
+
 class Graphmpi {
 public:
     static Graphmpi& getinstance();
-    std::pair<int, int> init(int thread_count, Graph *graph); // get node range
+    void init(int thread_count, Graph *graph, int schedule_size); // get node range
     long long runmajor(); // mpi uses on major thread
-    int* getneighbor(int u); // return a int[] end with a -1
-    int getdegree(); // this function can only be called immediately after calling getneighbor
-    bool include(int u); // return whether u is in this process
-    std::pair<int, int> get_vertex_range();
+    int* get_edge_range();
     void report(long long local_ans);
-    void end();
+    void set_loop(int*, int);
+    void get_loop(int*&, int&);
+    bool loop_flag = false;
 
 private:
-    static const int MAXN = 1 << 22, MAXTHREAD = 24, chunksize = 8;
+    static const int MAXTHREAD = 24, CHUNK_CONST = 10, MESSAGE_SIZE = 256;
     Graph* graph;
-    int comm_sz, my_rank, mynodel, mynoder, blocksize, idlethreadcnt, threadcnt, global_vertex, vertex[MAXTHREAD];
-    long long node_ans = 0;
+    int comm_sz, my_rank, idlethreadcnt, threadcnt, chunksize, *data[MAXTHREAD], *loop_data[MAXTHREAD], loop_size[MAXTHREAD];
+    long long node_ans;
     double starttime;
-    std::queue<int> requestq, idleq;
-    static int data[MAXTHREAD][MAXN], qrynode[MAXTHREAD], qrydest[MAXTHREAD], length[MAXTHREAD];
-    std::atomic_flag lock[MAXTHREAD], global_vertex_lock;
+    Bx2kQueue idleq;
+    //std::queue<int> idleq;
+    std::atomic_flag lock[MAXTHREAD], qlock;
     Graphmpi();
     Graphmpi(const Graphmpi&&) = delete;
     Graphmpi(const Graphmpi&) = delete;
