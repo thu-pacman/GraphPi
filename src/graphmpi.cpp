@@ -26,9 +26,7 @@ void Graphmpi::init(int _threadcnt, Graph* _graph, int schedule_size) {
     }
     qlock.clear();
     chunksize = CHUNK_CONST * (MAXTHREAD - 1) * comm_sz;
-    for (int i = schedule_size; i > 3; i--) {
-        chunksize /= graph->e_cnt / graph->v_cnt / (i - 3);
-    }
+    if (schedule_size > 3) chunksize /= graph->e_cnt / graph->v_cnt * (schedule_size - 3);
     chunksize = std::max(chunksize, 1);
     printf("chunksize = %d\n", chunksize);
     fflush(stdout);
