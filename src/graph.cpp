@@ -329,7 +329,6 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
     for (int i = schedule.get_restrict_last(depth); i != -1; i = schedule.get_restrict_next(i))
         if (min_vertex > subtraction_set.get_data(schedule.get_restrict_index(i)))
             min_vertex = subtraction_set.get_data(schedule.get_restrict_index(i));
-    if (depth == 1) Graphmpi::getinstance().get_loop(loop_data_ptr, loop_size);
     for (int i = 0; i < loop_size; ++i)
     {
         if (min_vertex <= loop_data_ptr[i])
@@ -376,21 +375,45 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
             long long local_ans = 0;
             VertexSet subtraction_set;
             subtraction_set.init();
-            int last = -1;
+            int last = -1, min_vertex;
             gm.loop_flag = true;
             auto match_edge = [&](int vertex, int *data, int size) {
                 if (vertex != last) {
                     if (~last) subtraction_set.pop_back();
+                    last = vertex;
                     int l, r;
                     get_edge_index(vertex, l, r);
                     for (int prefix_id = schedule.get_last(0); prefix_id != -1; prefix_id = schedule.get_next(prefix_id)) {
                         vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, edge + l, r - l, prefix_id);
                     }
                     subtraction_set.push_back(vertex);
-                    last = vertex;
+                    min_vertex = v_cnt;
+                    for (int i = schedule.get_restrict_last(1); i != -1; i = schedule.get_restrict_next(i))
+                        if (min_vertex > subtraction_set.get_data(schedule.get_restrict_index(i)))
+                            min_vertex = subtraction_set.get_data(schedule.get_restrict_index(i));
                 }
-                gm.set_loop(data, size);
-                pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, 1);
+                for (int i = 0; i < size; ++i)
+                {
+                    if (min_vertex <= data[i]) break;
+                    int vertex = data[i];
+                    if (subtraction_set.has_data(vertex)) continue;
+                    int l, r;
+                    get_edge_index(vertex, l, r);
+                    bool is_zero = false;
+                    for (int prefix_id = schedule.get_last(1); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
+                    {
+                        vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], r - l, prefix_id, vertex);
+                        if( vertex_set[prefix_id].get_size() == 0) {
+                            is_zero = true;
+                            break;
+                        }
+                    }
+                    if( is_zero ) continue;
+                    //subtraction_set.insert_ans_sort(vertex);
+                    subtraction_set.push_back(vertex);
+                    pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, 2);
+                    subtraction_set.pop_back();
+                }
             };
             for (int *data; data = gm.get_edge_range();) {
                 match_edge(data[1], edge + data[2], data[3] - data[2]);

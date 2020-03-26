@@ -23,14 +23,12 @@ public:
     long long runmajor(); // mpi uses on major thread
     int* get_edge_range();
     void report(long long local_ans);
-    void set_loop(int*, int);
-    void get_loop(int*&, int&);
     bool loop_flag = false;
 
 private:
-    static const int MAXTHREAD = 24, CHUNK_CONST = 10, MESSAGE_SIZE = 256, MAX_NODE = 1 << 25;
+    static const int MAXTHREAD = 24, CHUNK_CONST = 10, MESSAGE_SIZE = 256;
     Graph* graph;
-    int comm_sz, my_rank, idlethreadcnt, threadcnt, chunksize, *data[MAXTHREAD], *loop_data[MAXTHREAD], loop_size[MAXTHREAD];
+    int comm_sz, my_rank, idlethreadcnt, threadcnt, chunksize, *data[MAXTHREAD];
     long long node_ans;
     double starttime;
     Bx2kQueue idleq;

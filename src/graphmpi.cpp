@@ -40,7 +40,7 @@ long long Graphmpi::runmajor() {
     MPI_Request sendrqst, recvrqst;
     MPI_Status status;
     MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
-    int idlenodecnt = 0, *iter = new int[comm_sz], *edgel = new int[graph->v_cnt], *edger = graph->vertex + 1;
+    int idlenodecnt = 0, *iter = new int[comm_sz], *edgel = new int[graph->v_cnt], *edger = graph->vertex + 1, pro_sum = 0, pro_k = std::max(graph->v_cnt / 10, 1);
     memset(iter, 0, sizeof(int) * comm_sz);
     memcpy(edgel, graph->vertex, sizeof(int) * graph->v_cnt);
     auto get_send = [&](int last_work, int thread, int node) {
@@ -60,7 +60,13 @@ long long Graphmpi::runmajor() {
                 send[1] = i;
                 send[2] = edgel[i];
                 send[3] = edgel[i] = std::min(edgel[i] + chunksize, edger[i]);
+                //if (edgel[i] == edger[i]) i++;//bx2k : ra!
                 i++;
+                if (i > pro_sum) {
+                    printf("nearly part %d out of 10 done\n", i / pro_k);
+                    fflush(stdout);
+                    pro_sum += pro_k;
+                }
             }
         }
     };
@@ -159,20 +165,6 @@ void Graphmpi::report(long long local_ans) {
     idlethreadcnt++;
     printf("node = %d, thread = %d, local_ans = %lld, time = %f\n", my_rank, omp_get_thread_num(), local_ans, get_wall_time() - starttime);
     fflush(stdout);
-}
-
-void Graphmpi::set_loop(int *data, int size) {
-    int k = omp_get_thread_num();
-    loop_data[k] = data;
-    loop_size[k] = size;
-}
-
-void Graphmpi::get_loop(int *&data, int &size) {
-    if (loop_flag) {
-        int k = omp_get_thread_num();
-        data = loop_data[k];
-        size = loop_size[k];
-    }
 }
 
 void Bx2kQueue::push(int k) {
