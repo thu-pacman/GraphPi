@@ -28,7 +28,7 @@ public:
     bool loop_flag = false;
 
 private:
-    static const int MAXTHREAD = 24, CHUNK_CONST = 10, MESSAGE_SIZE = 256;
+    static const int MAXTHREAD = 24, CHUNK_CONST = 10, MESSAGE_SIZE = 256, MAX_NODE = 1 << 25;
     Graph* graph;
     int comm_sz, my_rank, idlethreadcnt, threadcnt, chunksize, *data[MAXTHREAD], *loop_data[MAXTHREAD], loop_size[MAXTHREAD];
     long long node_ans;

@@ -22,6 +22,7 @@ void Graphmpi::init(int _threadcnt, Graph* _graph, int schedule_size) {
     idlethreadcnt = 0;
     for (int i = 0; i < threadcnt; i++) {
         data[i] = new int[MESSAGE_SIZE];
+        memset(data[i], -1, sizeof(int) * MESSAGE_SIZE);
         lock[i].test_and_set();
     }
     qlock.clear();
@@ -34,35 +35,32 @@ void Graphmpi::init(int _threadcnt, Graph* _graph, int schedule_size) {
 
 long long Graphmpi::runmajor() {
     long long tot_ans = 0;
-    const int IDLE = 2, END = 3, OVERWORK = 4, REPORT = 5, SERVER = 0, OVERWORKSIZE = 5;
+    const int IDLE = 2, END = 3, OVERWORK = 4, REPORT = 5, SERVER = 0, OVERWORKSIZE = 6;
     static int recv[MESSAGE_SIZE], send[MESSAGE_SIZE];
     MPI_Request sendrqst, recvrqst;
     MPI_Status status;
     MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
-    int idlenodecnt = 0, cur = 0, edgel, edger;
-    std::queue<int> workq;
-    graph->get_edge_index(0, edgel, edger);
-    auto get_send = [&]() {
+    int idlenodecnt = 0, *iter = new int[comm_sz], *edgel = new int[graph->v_cnt], *edger = graph->vertex + 1;
+    memset(iter, 0, sizeof(int) * comm_sz);
+    memcpy(edgel, graph->vertex, sizeof(int) * graph->v_cnt);
+    auto get_send = [&](int last_work, int thread, int node) {
         send[0] = OVERWORK;
-        if (cur == graph->v_cnt) send[1] = -1;
+        send[4] = 0;
+        send[5] = thread;
+        if (~last_work && edgel[last_work] < edger[last_work]) {
+            send[1] = last_work;
+            send[2] = edgel[last_work];
+            send[3] = edgel[last_work] = std::min(edgel[last_work] + chunksize, edger[last_work]);
+        }
         else {
-            send[1] = cur;
-            send[2] = edgel;
-            send[4] = 0;
-            if (edger - edgel > chunksize) send[3] = edgel += chunksize;
+            int &i = iter[node];
+            for (; i < graph->v_cnt && edgel[i] == edger[i]; i++);
+            if (i == graph->v_cnt) send[1] = -1;
             else {
-                send[3] = edger;
-                for (int sum = edger - edgel;; send[4]++) {
-                    int k = std::max(graph->v_cnt / 10, 1);
-                    if (cur % k == 0) {
-                        printf("nearly %d out of 10 task assigned, time = %f\n", cur / k, get_wall_time() - starttime);
-                        fflush(stdout);
-                    }
-                    cur++;
-                    if (cur < graph->v_cnt) graph->get_edge_index(cur, edgel, edger);
-                    sum += edger - edgel;
-                    if (sum > chunksize || cur == graph->v_cnt) break;
-                }
+                send[1] = i;
+                send[2] = edgel[i];
+                send[3] = edgel[i] = std::min(edgel[i] + chunksize, edger[i]);
+                i++;
             }
         }
     };
@@ -71,21 +69,20 @@ long long Graphmpi::runmajor() {
         MPI_Test(&recvrqst, &testflag, &status);
         if (testflag) {
             if (recv[0] == IDLE) {
-                get_send();
+                get_send(recv[1], recv[2], status.MPI_SOURCE);
                 MPI_Isend(send, OVERWORKSIZE, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD, &sendrqst);
             }
-            else if (recv[0] == END) {
-                tot_ans = (((long long)(recv[1]) << 32) | (unsigned)recv[2]);
-                break;
-            }
             else if (recv[0] == OVERWORK) {
-                memcpy(data[workq.front()], recv, OVERWORKSIZE * sizeof(recv[0]));
-                lock[workq.front()].clear();
-                workq.pop();
+                memcpy(data[recv[5]], recv, OVERWORKSIZE * sizeof(recv[0]));
+                lock[recv[5]].clear();
             }
             else if (recv[0] == REPORT) {
                 tot_ans += (((long long)(recv[1]) << 32) | (unsigned)recv[2]);
                 idlenodecnt++;
+            }
+            else if (recv[0] == END) {
+                tot_ans = (((long long)(recv[1]) << 32) | (unsigned)recv[2]);
+                break;
             }
             MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
         }
@@ -97,14 +94,15 @@ long long Graphmpi::runmajor() {
             idleq.pop();
         }
         qlock.clear();
-        if(tmpflag) {
+        if (tmpflag) {
             if (my_rank) {
-                workq.push(tmpthread);
                 send[0] = IDLE;
-                MPI_Isend(send, 1, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
+                send[1] = data[tmpthread][1];
+                send[2] = tmpthread;
+                MPI_Isend(send, 3, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
             }
             else {
-                get_send();
+                get_send(data[tmpthread][1], tmpthread, SERVER);
                 memcpy(data[tmpthread], send, OVERWORKSIZE * sizeof(send[0]));
                 lock[tmpthread].clear();
             }
@@ -133,6 +131,8 @@ long long Graphmpi::runmajor() {
             break;
         }
     }
+    delete[] iter;
+    delete[] edgel;
     return tot_ans;
 }
 
