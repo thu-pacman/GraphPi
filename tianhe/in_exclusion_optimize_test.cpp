@@ -37,17 +37,17 @@ int main(int argc,char *argv[]) {
     Graph *g;
     DataLoader D;
 
-    const std::string data_type = argv[1];
+    const std::string type = argv[1];
     const std::string path = argv[2];
     
     int size = atoi(argv[3]);
     char* adj_mat = argv[4];
-    
+
     DataType my_type;
+    
+    GetDataType(my_type, type);
 
-    GetDataType(my_type, data_type);
-
-    if( my_type == DataType::Invalid) {
+    if(my_type == DataType::Invalid) {
         printf("Dataset not found!\n");
         return 0;
     }
@@ -57,9 +57,8 @@ int main(int argc,char *argv[]) {
     printf("Load data success!\n");
     fflush(stdout);
 
-//    Pattern p(size, adj_mat);
-    Pattern p(3, true);
-    test_pattern(g, p, 0, 2, false);
-//    test_pattern(g, p, 1, 1);  
+    Pattern p(size, adj_mat);
+    test_pattern(g, p, 1, 1, true);
+    
     delete g;
 }
