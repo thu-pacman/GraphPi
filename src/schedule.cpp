@@ -1732,3 +1732,9 @@ void Schedule::remove_invalid_permutation(std::vector< std::vector<int> > &candi
         }
     }
 }
+
+int Schedule::get_in_exclusion_optimize_num_when_not_optimize() {
+    std::vector<int> I;
+    for(int i = 0; i < size; ++i) I.push_back(i);
+    return get_vec_optimize_num(I);
+}

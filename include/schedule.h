@@ -27,6 +27,7 @@ public:
     inline int get_last(int i) const { return last[i];}
     inline int get_next(int i) const { return next[i];}
     inline int get_in_exclusion_optimize_num() const { return in_exclusion_optimize_num;}
+    int get_in_exclusion_optimize_num_when_not_optimize();
     void add_restrict(const std::vector< std::pair<int, int> >& restricts);
     inline int get_total_restrict_num() const { return total_restrict_num;}
     inline int get_restrict_last(int i) const { return restrict_last[i];}
@@ -46,7 +47,7 @@ public:
     std::vector< std::vector<int> > get_isomorphism_vec() const;
     static std::vector< std::vector<int> > calc_permutation_group(const std::vector<int> vec, int size);
     inline const int* get_adj_mat_ptr() const {return adj_mat;}
-    
+        
 
     void print_schedule() const;
 
