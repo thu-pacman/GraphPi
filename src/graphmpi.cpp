@@ -30,20 +30,24 @@ void Graphmpi::init(int _threadcnt, Graph* _graph, int schedule_size) {
     chunksize = std::max(chunksize, 1);
     printf("chunksize = %d\n", chunksize);
     fflush(stdout);
+    min_cur = -1;
 }
 
 long long Graphmpi::runmajor() {
     long long tot_ans = 0;
-    const int IDLE = 2, END = 3, OVERWORK = 4, REPORT = 5, SERVER = 0, OVERWORKSIZE = 5;
+    const int IDLE = 2, END = 3, OVERWORK = 4, REPORT = 5, SERVER = 0, OVERWORKSIZE = 5, PING = -1;
     static int recv[MESSAGE_SIZE], send[MESSAGE_SIZE];
     MPI_Request sendrqst, recvrqst;
     MPI_Status status;
     MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
+    send[0] = PING;
+    MPI_Isend(send, 1, MPI_INT, SERVER, 0, MPI_COMM_WORLD, &sendrqst);
     int idlenodecnt = 0, cur = 0, edgel, edger;
     std::queue<int> workq;
     graph->get_edge_index(0, edgel, edger);
     auto get_send = [&]() {
         send[0] = OVERWORK;
+        if (cur <= min_cur) cur = min_cur;
         if (cur == graph->v_cnt) send[1] = -1;
         else {
             send[1] = cur;
@@ -71,6 +75,11 @@ long long Graphmpi::runmajor() {
         MPI_Test(&recvrqst, &testflag, &status);
         if (testflag) {
             if (recv[0] == IDLE) {
+                MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
+                if (min_cur < recv[1]) {
+#pragma omp atomic
+                    min_cur = recv[1];
+                }
                 get_send();
                 MPI_Isend(send, OVERWORKSIZE, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD, &sendrqst);
             }
@@ -100,8 +109,10 @@ long long Graphmpi::runmajor() {
         if(tmpflag) {
             if (my_rank) {
                 workq.push(tmpthread);
+                MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
                 send[0] = IDLE;
-                MPI_Isend(send, 1, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
+                send[1] = min_cur;
+                MPI_Isend(send, 2, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
             }
             else {
                 get_send();
@@ -112,6 +123,7 @@ long long Graphmpi::runmajor() {
         if (idlethreadcnt == threadcnt - 1) {
             idlethreadcnt = -1;
             if (my_rank) {
+                MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
                 send[0] = REPORT;
                 send[1] = node_ans >> 32;
                 send[2] = node_ans;
@@ -124,7 +136,7 @@ long long Graphmpi::runmajor() {
         }
         if (idlenodecnt == comm_sz) {
             for (int i = 1; i < comm_sz; i++) {
-                //MPI_Wait(&sendrqst, &status);
+                MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
                 send[0] = END;
                 send[1] = tot_ans >> 32;
                 send[2] = tot_ans;
@@ -175,18 +187,9 @@ void Graphmpi::get_loop(int *&data, int &size) {
     }
 }
 
-void Bx2kQueue::push(int k) {
-    a[t++] = k;
-}
-
-int Bx2kQueue::front() {
-    return a[h];
-}
-
-bool Bx2kQueue::empty() {
-    return h == t;
-}
-
-void Bx2kQueue::pop() {
-    h++;
+void Graphmpi::set_cur(int i) {
+    if (i > min_cur) {
+#pragma omp atomic
+        min_cur = i;
+    }
 }

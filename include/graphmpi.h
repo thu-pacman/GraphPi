@@ -3,19 +3,6 @@
 #include <queue>
 #include <atomic>
 
-class Bx2kQueue {
-public:
-    void push(int);
-    void pop();
-    int front();
-    bool empty();
-
-private:
-    static const int N = 256;
-    int a[N];
-    unsigned char h = 0, t = 0;
-};
-
 class Graphmpi {
 public:
     static Graphmpi& getinstance();
@@ -25,15 +12,16 @@ public:
     void report(long long local_ans);
     void set_loop(int*, int);
     void get_loop(int*&, int&);
+    void set_cur(int);
     bool loop_flag = false;
 
 private:
     static const int MAXTHREAD = 24, CHUNK_CONST = 10, MESSAGE_SIZE = 256;
     Graph* graph;
-    int comm_sz, my_rank, idlethreadcnt, threadcnt, chunksize, *data[MAXTHREAD], *loop_data[MAXTHREAD], loop_size[MAXTHREAD];
+    int comm_sz, my_rank, idlethreadcnt, threadcnt, chunksize, *data[MAXTHREAD], *loop_data[MAXTHREAD], loop_size[MAXTHREAD], min_cur;
     long long node_ans;
     double starttime;
-    Bx2kQueue idleq;
+    std::queue<int> idleq;
     //std::queue<int> idleq;
     std::atomic_flag lock[MAXTHREAD], qlock;
     Graphmpi();
