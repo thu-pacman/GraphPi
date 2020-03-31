@@ -77,7 +77,6 @@ long long Graphmpi::runmajor() {
             if (recv[0] == IDLE) {
                 MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
                 if (min_cur < recv[1]) {
-#pragma omp atomic
                     min_cur = recv[1];
                 }
                 get_send();
@@ -189,7 +188,6 @@ void Graphmpi::get_loop(int *&data, int &size) {
 
 void Graphmpi::set_cur(int i) {
     if (i > min_cur) {
-#pragma omp atomic
         min_cur = i;
     }
 }

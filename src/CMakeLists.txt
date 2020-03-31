@@ -20,3 +20,6 @@ TARGET_LINK_LIBRARIES(run_brute_force_tc graph_mining)
 
 ADD_EXECUTABLE(run_general_tc run_general_tc.cpp)
 TARGET_LINK_LIBRARIES(run_general_tc graph_mining)
+
+ADD_EXECUTABLE(run_mpi_trivial run_mpi_trivial.cpp)
+TARGET_LINK_LIBRARIES(run_mpi_trivial graph_mining)
