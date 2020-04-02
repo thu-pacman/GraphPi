@@ -64,7 +64,7 @@ void test_pattern(Graph* g, Pattern &pattern) {
         int num = schedule_gz.get_in_exclusion_optimize_num_when_not_optimize();
 
         printf("%lld,%d,%.6lf\n", ans2, num, t4 - t3);
-        schedule_our.print_schedule();
+        schedule_gz.print_schedule();
         for(auto& p : gz_pairs)
             printf("(%d,%d)", p.first, p.second);
         puts("");
