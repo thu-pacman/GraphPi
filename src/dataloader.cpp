@@ -168,112 +168,16 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
     }
     printf("Load begin in %s\n",path);
     g = new Graph();
-    id.clear();
-    int x,y;
-    int tmp_v;
-    unsigned int tmp_e;
-    tmp_v = 0;
-    tmp_e = 0;
-    std::vector< std::pair<int,int> > buffer;
-    buffer.clear();
-    while(scanf("%d%d",&x,&y)!=EOF) {
-        if(x == y) {
-            printf("find self circle\n");
-            continue;
-            //return false;
-        }
-        if(!id.count(x)) id[x] = tmp_v ++;
-        if(!id.count(y)) id[y] = tmp_v ++;
-        x = id[x];
-        y = id[y];
-        buffer.push_back(std::make_pair(x,y));
-        ++tmp_e;
-        if(tmp_e % 1000000u == 0u) {
-            printf("load %u edges\n",tmp_e);
-            fflush(stdout);
-        }
-    }
-    g->v_cnt = tmp_v;
-    g->e_cnt = tmp_e * 2;
-    int* degree = new int[g->v_cnt];
-    memset(degree, 0, g->v_cnt * sizeof(int));
-    std::pair<int,int> *e = new std::pair<int,int>[g->e_cnt];
-    tmp_e = 0;
-    for(const auto&p : buffer) {
-        ++degree[p.first];
-        ++degree[p.second];
-        e[tmp_e++] = p;
-        e[tmp_e++] = std::make_pair(p.second, p.first);
-    }
-
-    // oriented_type == 0 do nothing
-    //               == 1 high degree first
-    //               == 2 low degree first
-    if ( oriented_type != 0 ) {
-        std::pair<int,int> *rank = new std::pair<int,int>[g->v_cnt];
-        int *new_id = new int[g->v_cnt];
-        for(int i = 0; i < g->v_cnt; ++i) rank[i] = std::make_pair(i,degree[i]);
-        if( oriented_type == 1) std::sort(rank, rank + g->v_cnt, cmp_degree_gt);
-        if( oriented_type == 2) std::sort(rank, rank + g->v_cnt, cmp_degree_lt);
-        for(int i = 0; i < g->v_cnt; ++i) new_id[rank[i].first] = i;
-        for(unsigned int i = 0; i < g->e_cnt; ++i) {
-            e[i].first = new_id[e[i].first];
-            e[i].second = new_id[e[i].second];
-        }
-        delete[] rank;
-        delete[] new_id;
-    }
-    std::sort(degree, degree + g->v_cnt);
-
-    // The max size of intersections is the second largest degree.
-    //TODO VertexSet::max_intersection_size has different value with different dataset, but we use a static variable now.
-    VertexSet::max_intersection_size = std::max( VertexSet::max_intersection_size, degree[g->v_cnt - 2]);
-    delete[] degree;
-    if(tmp_v != g->v_cnt) {
-        printf("vertex number error!\n");
-    }
-    if(tmp_e != g->e_cnt) {
-        printf("edge number error!\n");
-    }
-    if(tmp_v != g->v_cnt || tmp_e != g->e_cnt) {
-        fclose(stdin);
-        delete g;
-        delete[] e;
-        return false;
-    }
-    std::sort(e,e+tmp_e,cmp_pair);
-    g->e_cnt = unique(e,e+tmp_e) - e;
-    for(unsigned i = 0; i < g->e_cnt - 1; ++i)
-        if(e[i] == e[i+1]) {
-            printf("have same edge\n");
-            fclose(stdin);
-            delete g;
-            delete[] e;
-            return false;
-        }
-    g->edge = new int[g->e_cnt];
-    g->vertex = new unsigned int[g->v_cnt + 1];
-    bool* have_edge = new bool[g->v_cnt];
-    int lst_v = -1;
-    for(int i = 0; i < g->v_cnt; ++i) have_edge[i] = false;
-    for(unsigned int i = 0; i < g->e_cnt; ++i) {
-        if(e[i].first != lst_v) {
-            have_edge[e[i].first] = true;
-            g->vertex[e[i].first] = i;
-        }
-        lst_v = e[i].first;
-        g->edge[i] = e[i].second;
-    }
-    delete[] e;
-    printf("Success! There are %d nodes and %u edges.\n",g->v_cnt,g->e_cnt);
-    fflush(stdout);
-    g->vertex[g->v_cnt] = g->e_cnt;
-    for(int i = g->v_cnt - 1; i >= 0; --i)
-        if(!have_edge[i]) {
-            g->vertex[i] = g->vertex[i+1];
-        }
-
-    delete[] have_edge;
+    scanf("%d%u", &g->v_cnt, &g->e_cnt);
+    int mx_degree;
+    scanf("%d", &mx_degree);
+    VertexSet::max_intersection_size = std::max( VertexSet::max_intersection_size, mx_degree);
+    g->edge = new int [g->e_cnt];
+    g->vertex = new int [g->v_cnt + 1];
+    for(int i = 0; i < g->v_cnt + 1; ++i)
+        scanf("%d", &g->vertex[i]);
+    for(int i = 0; i < g->e_cnt; ++i)
+        scanf("%u", &g->edge[i]);
     return true;
 }
 
