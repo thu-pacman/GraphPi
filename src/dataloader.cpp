@@ -173,7 +173,7 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
     scanf("%d", &mx_degree);
     VertexSet::max_intersection_size = std::max( VertexSet::max_intersection_size, mx_degree);
     g->edge = new int [g->e_cnt];
-    g->vertex = new int [g->v_cnt + 1];
+    g->vertex = new unsigned int [g->v_cnt + 1];
     for(int i = 0; i < g->v_cnt + 1; ++i)
         scanf("%d", &g->vertex[i]);
     for(int i = 0; i < g->e_cnt; ++i)
