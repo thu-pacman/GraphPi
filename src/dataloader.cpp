@@ -168,6 +168,7 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
     }
     printf("Load begin in %s\n",path);
     g = new Graph();
+    g->tri_cnt = Twitter_tri_cnt;
     scanf("%d%u", &g->v_cnt, &g->e_cnt);
     int mx_degree;
     scanf("%d", &mx_degree);
