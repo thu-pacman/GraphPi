@@ -175,9 +175,9 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
     g->edge = new int [g->e_cnt];
     g->vertex = new unsigned int [g->v_cnt + 1];
     for(int i = 0; i < g->v_cnt + 1; ++i)
-        scanf("%d", &g->vertex[i]);
+        scanf("%u", &g->vertex[i]);
     for(int i = 0; i < g->e_cnt; ++i)
-        scanf("%u", &g->edge[i]);
+        scanf("%d", &g->edge[i]);
     return true;
 }
 
