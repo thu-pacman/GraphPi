@@ -35,21 +35,20 @@ void Graphmpi::init(int _threadcnt, Graph* _graph, int schedule_size) {
 
 long long Graphmpi::runmajor() {
     long long tot_ans = 0;
-    const int IDLE = 2, END = 3, OVERWORK = 4, REPORT = 5, SERVER = 0, OVERWORKSIZE = 5, PING = -1;
-    static int recv[MESSAGE_SIZE], send[MESSAGE_SIZE];
+    const int IDLE = 2, END = 3, OVERWORK = 4, REPORT = 5, SERVER = 0, OVERWORKSIZE = 5;
+    static int recv[MESSAGE_SIZE];
     MPI_Request sendrqst, recvrqst;
     MPI_Status status;
     MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
-    send[0] = PING;
-    MPI_Isend(send, 1, MPI_INT, SERVER, 0, MPI_COMM_WORLD, &sendrqst);
-    int idlenodecnt = 0, cur = 0, edgel, edger;
+    int idlenodecnt = 0, cur = 0, edgel, edger, kkk = chunksize, *send;
     std::queue<int> workq;
     graph->get_edge_index(0, edgel, edger);
     auto get_send = [&]() {
         send[0] = OVERWORK;
-        if (cur <= min_cur) cur = min_cur;
+        //if (cur <= min_cur) cur = min_cur + 1;
         if (cur == graph->v_cnt) send[1] = -1;
         else {
+            int chunksize = kkk - (long long)cur * kkk / graph->v_cnt;
             send[1] = cur;
             send[2] = edgel;
             send[4] = 0;
@@ -70,12 +69,17 @@ long long Graphmpi::runmajor() {
             }
         }
     };
+    auto roll_send = [&]() {
+        static int i = 0, buf[ROLL_SIZE][OVERWORKSIZE + 1];
+        send = buf[i];
+        i = (i + 1) % ROLL_SIZE;
+    };
     for (;;) {
         int testflag = 0;
         MPI_Test(&recvrqst, &testflag, &status);
         if (testflag) {
             if (recv[0] == IDLE) {
-                MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
+                roll_send();
                 if (min_cur < recv[1]) {
                     min_cur = recv[1];
                 }
@@ -108,7 +112,7 @@ long long Graphmpi::runmajor() {
         if(tmpflag) {
             if (my_rank) {
                 workq.push(tmpthread);
-                MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
+                roll_send();
                 send[0] = IDLE;
                 send[1] = min_cur;
                 MPI_Isend(send, 2, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
@@ -122,7 +126,7 @@ long long Graphmpi::runmajor() {
         if (idlethreadcnt == threadcnt - 1) {
             idlethreadcnt = -1;
             if (my_rank) {
-                MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
+                roll_send();
                 send[0] = REPORT;
                 send[1] = node_ans >> 32;
                 send[2] = node_ans;
@@ -135,7 +139,7 @@ long long Graphmpi::runmajor() {
         }
         if (idlenodecnt == comm_sz) {
             for (int i = 1; i < comm_sz; i++) {
-                MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
+                roll_send();
                 send[0] = END;
                 send[1] = tot_ans >> 32;
                 send[2] = tot_ans;
