@@ -62,7 +62,10 @@ int main(int argc,char *argv[]) {
         return 0;
     }
 
+    double t1 = get_wall_time();
     assert(D.load_data(g,my_type,path.c_str())==true); 
+    double t2 = get_wall_time();
+    printf("Load time %.6lf\n", t2 - t1);
 
     printf("Load data success!\n");
     fflush(stdout);
