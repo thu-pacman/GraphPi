@@ -67,3 +67,21 @@ void GetDataType(DataType &type, const std::string str) {
         type = DataType::Wiki_Vote;
     }
 }
+
+int read_int() {
+    char ch = getchar();
+    while((ch < '0' || ch > '9') && ch !='-') ch = getchar();
+    int tag = 1;
+    if(ch == '-') tag = -1, ch = getchar();
+    int x = 0;
+    while( ch >= '0' && ch <= '9') x = x* 10 + ch -'0', ch = getchar();
+    return x * tag;
+}
+
+unsigned int read_unsigned_int() {
+    char ch = getchar();
+    while((ch < '0' || ch > '9') ) ch = getchar();
+    unsigned int x = 0;
+    while( ch >= '0' && ch <= '9') x = x* 10 + ch -'0', ch = getchar();
+    return x;
+}

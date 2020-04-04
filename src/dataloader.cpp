@@ -1,6 +1,7 @@
 #include "../include/dataloader.h"
 #include "../include/graph.h"
 #include "../include/vertex_set.h"
+#include "../include/common.h"
 #include <cstdlib>
 #include <cstring>
 
@@ -176,9 +177,9 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
     g->edge = new int [g->e_cnt];
     g->vertex = new unsigned int [g->v_cnt + 1];
     for(int i = 0; i < g->v_cnt + 1; ++i)
-        scanf("%u", &g->vertex[i]);
+        g->vertex[i] = read_unsigned_int();
     for(unsigned int i = 0; i < g->e_cnt; ++i)
-        scanf("%d", &g->edge[i]);
+        g->edge[i] = read_int();
     return true;
 }
 
