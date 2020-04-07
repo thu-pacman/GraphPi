@@ -12,13 +12,12 @@ public:
     void report(long long local_ans);
     void set_loop(int*, int);
     void get_loop(int*&, int&);
-    void set_cur(int);
     bool loop_flag = false;
 
 private:
     static const int MAXTHREAD = 24, CHUNK_CONST = 10, MESSAGE_SIZE = 16, ROLL_SIZE = 32768;
     Graph* graph;
-    int comm_sz, my_rank, idlethreadcnt, threadcnt, chunksize, *data[MAXTHREAD], *loop_data[MAXTHREAD], loop_size[MAXTHREAD], min_cur;
+    int comm_sz, my_rank, idlethreadcnt, threadcnt, chunksize, *data[MAXTHREAD], *loop_data[MAXTHREAD], loop_size[MAXTHREAD];
     long long node_ans;
     double starttime;
     std::queue<int> idleq;

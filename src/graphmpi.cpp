@@ -30,7 +30,6 @@ void Graphmpi::init(int _threadcnt, Graph* _graph, int schedule_size) {
     chunksize = std::max(chunksize, 1);
     printf("chunksize = %d\n", chunksize);
     fflush(stdout);
-    min_cur = -1;
 }
 
 long long Graphmpi::runmajor() {
@@ -43,9 +42,8 @@ long long Graphmpi::runmajor() {
     int idlenodecnt = 0, cur = 0, edgel, edger, kkk = chunksize, *send;
     std::queue<int> workq;
     graph->get_edge_index(0, edgel, edger);
-    auto get_send = [&]() {
+    auto get_send = [&](int *send) {
         send[0] = OVERWORK;
-        //if (cur <= min_cur) cur = min_cur + 1;
         if (cur == graph->v_cnt) send[1] = -1;
         else {
             int chunksize = kkk - (long long)cur * kkk / graph->v_cnt;
@@ -69,22 +67,37 @@ long long Graphmpi::runmajor() {
             }
         }
     };
+    int buft = 0, bufw = 0;
+    static int buf[ROLL_SIZE][MESSAGE_SIZE];
     auto roll_send = [&]() {
-        static int i = 0, buf[ROLL_SIZE][OVERWORKSIZE + 1];
-        send = buf[i];
-        i = (i + 1) % ROLL_SIZE;
+        send = buf[bufw] + 1;
+        bufw = (bufw + 1) % ROLL_SIZE;
+    };
+    auto update_send = [&]() {
+        if (buft != bufw) {
+            static bool ini_flag = false;
+            bool flag;
+            if (ini_flag) {
+                int testflag;
+                MPI_Test(&sendrqst, &testflag, MPI_STATUS_IGNORE);
+                flag = ini_flag;
+            }
+            else ini_flag = flag = true;
+            if (flag) {
+                MPI_Isend(buf[buft] + 1, MESSAGE_SIZE - 1, MPI_INT, buf[buft][0], 0, MPI_COMM_WORLD, &sendrqst);
+                buft = (buft + 1) % ROLL_SIZE;
+            }
+        }
     };
     for (;;) {
+        update_send();
         int testflag = 0;
         MPI_Test(&recvrqst, &testflag, &status);
         if (testflag) {
             if (recv[0] == IDLE) {
                 roll_send();
-                if (min_cur < recv[1]) {
-                    min_cur = recv[1];
-                }
-                get_send();
-                MPI_Isend(send, OVERWORKSIZE, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD, &sendrqst);
+                get_send(send);
+                send[-1] = status.MPI_SOURCE;
             }
             else if (recv[0] == END) {
                 tot_ans = (((long long)(recv[1]) << 32) | (unsigned)recv[2]);
@@ -113,13 +126,11 @@ long long Graphmpi::runmajor() {
             if (my_rank) {
                 workq.push(tmpthread);
                 roll_send();
+                send[-1] = SERVER;
                 send[0] = IDLE;
-                send[1] = min_cur;
-                MPI_Isend(send, 2, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
             }
             else {
-                get_send();
-                memcpy(data[tmpthread], send, OVERWORKSIZE * sizeof(send[0]));
+                get_send(data[tmpthread]);
                 lock[tmpthread].clear();
             }
         }
@@ -127,10 +138,10 @@ long long Graphmpi::runmajor() {
             idlethreadcnt = -1;
             if (my_rank) {
                 roll_send();
+                send[-1] = SERVER;
                 send[0] = REPORT;
                 send[1] = node_ans >> 32;
                 send[2] = node_ans;
-                MPI_Isend(send, 3, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
             }
             else {
                 idlenodecnt++;
@@ -140,11 +151,13 @@ long long Graphmpi::runmajor() {
         if (idlenodecnt == comm_sz) {
             for (int i = 1; i < comm_sz; i++) {
                 roll_send();
+                send[-1] = i;
                 send[0] = END;
                 send[1] = tot_ans >> 32;
                 send[2] = tot_ans;
-                MPI_Isend(send, 3, MPI_INT, i, SERVER, MPI_COMM_WORLD, &sendrqst);
             }
+            for (; buft != bufw; update_send());
+            MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
             break;
         }
     }
@@ -187,11 +200,5 @@ void Graphmpi::get_loop(int *&data, int &size) {
         int k = omp_get_thread_num();
         data = loop_data[k];
         size = loop_size[k];
-    }
-}
-
-void Graphmpi::set_cur(int i) {
-    if (i > min_cur) {
-        min_cur = i;
     }
 }

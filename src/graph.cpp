@@ -355,7 +355,7 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
         pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, depth + 1);
         subtraction_set.pop_back();
     }
-    if (depth == 1 && ii < loop_size) Graphmpi::getinstance().set_cur(subtraction_set.get_data(0));
+    //if (depth == 1 && ii < loop_size) Graphmpi::getinstance().set_cur(subtraction_set.get_data(0));
 }
 
 long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count, bool clique)
