@@ -30,7 +30,8 @@ TEST(pattern_matching_test, pattern_matching_patents_triangle) {
 
     bool is_pattern_valid = false;
     int performance_modeling_type = 0;
-    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
+    bool use_in_exclusion_optimize = false;
+    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     std::vector< std::pair<int,int> > pairs;

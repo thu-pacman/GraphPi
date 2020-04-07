@@ -48,7 +48,8 @@ int main(int argc,char *argv[])
     tc_pattern.add_edge(0, 2);
     tc_pattern.add_edge(1, 2);
     bool is_pattern_valid;
-    Schedule tc_schedule(tc_pattern, is_pattern_valid, 0, g->v_cnt, g->e_cnt);
+    bool use_in_exclusion_optimize = false;
+    Schedule tc_schedule(tc_pattern, is_pattern_valid, 0, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
 
     int thread_num = atoi(argv[2]);
     double t1 = get_wall_time();

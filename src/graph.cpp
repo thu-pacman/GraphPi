@@ -179,6 +179,7 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
     {
         VertexSet* vertex_set = new VertexSet[schedule.get_total_prefix_num()];
         VertexSet subtraction_set;
+        VertexSet tmp_set;
         subtraction_set.init();
         long long local_ans = 0;
         // TODO : try different chunksize
@@ -195,7 +196,7 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
             subtraction_set.push_back(vertex);
             //if (schedule.get_total_restrict_num() > 0 && clique == false)
             if(true)
-                pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, 1);
+                pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, tmp_set, local_ans, 1);
             else
                 pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, 1, clique);
             subtraction_set.pop_back();
@@ -353,7 +354,7 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
         if( is_zero ) continue;
         //subtraction_set.insert_ans_sort(vertex);
         subtraction_set.push_back(vertex);
-        pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, local_ans, depth + 1);
+        pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, tmp_set, local_ans, depth + 1);
         subtraction_set.pop_back();
     }
     //if (depth == 1 && ii < loop_size) Graphmpi::getinstance().set_cur(subtraction_set.get_data(0));

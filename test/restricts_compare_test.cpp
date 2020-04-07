@@ -20,13 +20,14 @@ void test_pattern(Graph* g, PatternType type) {
 
     bool is_pattern_valid;
     int performance_modeling_type;
+    bool use_in_exclusion_optimize = false;
     
     performance_modeling_type = 1;
-    Schedule schedule_our(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
+    Schedule schedule_our(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     performance_modeling_type = 2;
-    Schedule schedule_gz(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
+    Schedule schedule_gz(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     std::vector< std::pair<int,int> > gz_pairs;

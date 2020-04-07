@@ -18,7 +18,8 @@ void test_pattern(Graph *g, PatternType type) {
     
     bool is_pattern_valid;
     int performance_modeling_type = 0;
-    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
+    bool use_in_exclusion_optimize = false;
+    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     std::vector< std::vector< std::pair<int,int> > >pairs_group;
@@ -44,7 +45,7 @@ void test_pattern(Graph *g, PatternType type) {
     fflush(stdout);
 
     for(int rank = 0; rank < pairs_group.size(); ++rank) {
-        Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
+        Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
         ASSERT_EQ(is_pattern_valid, true);
 
         schedule.add_restrict(pairs_group[rank]);
