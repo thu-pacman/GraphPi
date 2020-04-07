@@ -46,7 +46,7 @@ long long Graphmpi::runmajor() {
         send[0] = OVERWORK;
         if (cur == graph->v_cnt) send[1] = -1;
         else {
-            int chunksize = kkk - (long long)cur * kkk / graph->v_cnt;
+            //int chunksize = kkk - (long long)cur * kkk / graph->v_cnt;
             send[1] = cur;
             send[2] = edgel;
             send[4] = 0;
