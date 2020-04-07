@@ -10,7 +10,7 @@ class Schedule
 {
 public:
     //TODO : more kinds of constructors to construct different Schedules from one Pattern
-    Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, int v_cnt, int e_cnt);
+    Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, bool use_in_exclusion_optimize, int v_cnt, int e_cnt);
     // performance_modeling type = 0 : not use modeling
     //                      type = 1 : use our modeling
     //                      type = 2 : use GraphZero's modeling
@@ -43,7 +43,7 @@ public:
     inline const int* get_adj_mat_ptr() const {return adj_mat;}
     
     //use principle of inclusion-exclusion to optimize
-    void init_in_exclusion_optimize(int optimize_num);
+    void init_in_exclusion_optimize();
 
     void print_schedule() const;
 
@@ -70,4 +70,5 @@ private:
     void performance_modeling(int* best_order, int v_cnt, int e_cnt);
     void GraphZero_performance_modeling(int* best_order, int v_cnt, int e_cnt);
     void get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, int* in_exclusion_val);
+    int get_vec_optimize_num(const std::vector<int> &vec);
 };

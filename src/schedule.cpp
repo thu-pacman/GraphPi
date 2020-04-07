@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <algorithm>
 
-Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, int v_cnt, int e_cnt)
+Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performance_modeling_type, bool use_in_exclusion_optimize, int v_cnt, int e_cnt)
 {
     is_pattern_valid = true;
     size = pattern.get_size();
@@ -40,6 +40,25 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
         delete[] best_order;
     }
 
+    if( use_in_exclusion_optimize) {
+        std::vector<int> I;
+        I.clear();
+        for(int i = 0; i < size; ++i) I.push_back(i);
+        in_exclusion_optimize_num = get_vec_optimize_num(I);
+        if( in_exclusion_optimize_num <= 1) {
+            printf("Can not use in_exclusion_optimize with this schedule\n");
+            in_exclusion_optimize_num = 0;
+        }
+        else {
+            printf("use in_exclusion_optimize with size %d\n", in_exclusion_optimize_num);
+            init_in_exclusion_optimize();
+        }
+    }
+    else {
+            in_exclusion_optimize_num = 0;
+    }
+
+
     // The I-th loop consists of at most the intersection of i-1 VertexSet.
     // So the max number of prefix = 0 + 1 + ... + size-1 = size * (size-1) / 2
     int max_prefix_num = size * (size - 1) / 2;
@@ -59,7 +78,6 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
 
     total_prefix_num = 0;
     total_restrict_num = 0;
-    in_exclusion_optimize_num = 0;
     
     // The I-th vertex must connect with at least one vertex from 0 to i-1.
     for (int i = 1; i < size; ++i)
@@ -675,8 +693,10 @@ void Schedule::performance_modeling(int* best_order, int v_cnt, int e_cnt) {
     delete[] p_size;
 }
 
-void Schedule::init_in_exclusion_optimize(int optimize_num) {
-    in_exclusion_optimize_num = optimize_num;
+void Schedule::init_in_exclusion_optimize() {
+    int optimize_num = in_exclusion_optimize_num;
+    
+    assert( in_exclusion_optimize_num > 1);
 
     int* id;
     id = new int[ optimize_num ];
@@ -974,4 +994,33 @@ void Schedule::restrict_selection(int v_cnt, int e_cnt, std::vector< std::vector
 
     delete[] p_size;
     assert(have_best);
+}
+
+int Schedule::get_vec_optimize_num(const std::vector<int> &vec) {
+    bool is_valid = true;
+    for(int i = 1; i < size; ++i) {
+        bool have_edge = false;
+        for(int j = 0; j < i; ++j)
+            if( adj_mat[INDEX(vec[i], vec[j], size)]) {
+                have_edge = true;
+                break;
+            }
+        if( have_edge == false) {
+            is_valid = false;
+            break;
+        }
+    }
+    if( !is_valid) return -1;
+
+    for(int k = 2; k <= size; ++k) {
+        bool flag = true;
+        for(int i = size - k + 1; i < size; ++i)
+            if(adj_mat[INDEX(vec[size - k], vec[i], size)]) {
+                flag = false;
+                break;
+            }
+        if(flag == false) return k - 1;
+    }
+    assert(0);
+    return -1;
 }
