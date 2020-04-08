@@ -45,7 +45,10 @@ long long Graphmpi::runmajor() {
     graph->get_edge_index(0, edgel, edger);
     auto get_send = [&](int *send) {
         send[0] = OVERWORK;
-        //if (cur < graph->v_cnt && skip_flag && graph->edge[edgel] >= cur) cur++;
+        if (cur < graph->v_cnt && skip_flag && graph->edge[edgel] >= cur) {
+            cur++;
+            if (cur < graph->v_cnt) graph->get_edge_index(cur, edgel, edger);
+        }
         if (cur == graph->v_cnt) send[1] = -1;
         else {
             //int chunksize = kkk - (long long)cur * kkk / graph->v_cnt;
@@ -207,7 +210,11 @@ Bx2k256Queue::Bx2k256Queue() {
 }
 
 bool Bx2k256Queue::empty() {
-    return h == t;
+    bool ans;
+    for (;lock.test_and_set(););
+    ans = (h == t);
+    lock.clear();
+    return ans;
 }
 
 void Bx2k256Queue::push(int k) {
@@ -218,5 +225,9 @@ void Bx2k256Queue::push(int k) {
 }
 
 int Bx2k256Queue::front_and_pop() {
-    return q[h++];
+    int ans;
+    for (;lock.test_and_set(););
+    ans = q[h++];
+    lock.clear();
+    return ans;
 }

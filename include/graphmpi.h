@@ -13,7 +13,6 @@ public:
 private:
     std::atomic_flag lock;
     unsigned char h, t;
-    std::queue<int> a;
     int q[256];
 };
 
