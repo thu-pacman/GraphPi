@@ -10,7 +10,7 @@ Graphmpi& Graphmpi::getinstance() {
     return gm;
 }
 
-void Graphmpi::init(int _threadcnt, Graph* _graph, int schedule_size) {
+void Graphmpi::init(int _threadcnt, Graph* _graph, const Schedule& schedule) {
     threadcnt = _threadcnt;
     graph = _graph;
     int provided;
@@ -24,10 +24,11 @@ void Graphmpi::init(int _threadcnt, Graph* _graph, int schedule_size) {
         data[i] = new int[MESSAGE_SIZE];
         lock[i].test_and_set();
     }
-    qlock.clear();
-    chunksize = CHUNK_CONST * (MAXTHREAD - 1) * comm_sz;
-    if (schedule_size > 3) chunksize /= graph->e_cnt / graph->v_cnt * (schedule_size - 3);
-    chunksize = std::max(chunksize, 1);
+    /*chunksize = CHUNK_CONST * (MAXTHREAD - 1) * comm_sz;
+    if (schedule.get_size() > 3) chunksize /= graph->e_cnt / graph->v_cnt * (schedule.get_size() - 3);
+    chunksize = std::max(chunksize, 1);*/
+    chunksize = 23;
+    skip_flag = ~schedule.get_restrict_last(1);
     printf("chunksize = %d\n", chunksize);
     fflush(stdout);
 }
@@ -44,6 +45,7 @@ long long Graphmpi::runmajor() {
     graph->get_edge_index(0, edgel, edger);
     auto get_send = [&](int *send) {
         send[0] = OVERWORK;
+        //if (cur < graph->v_cnt && skip_flag && graph->edge[edgel] >= cur) cur++;
         if (cur == graph->v_cnt) send[1] = -1;
         else {
             //int chunksize = kkk - (long long)cur * kkk / graph->v_cnt;
@@ -114,15 +116,8 @@ long long Graphmpi::runmajor() {
             }
             MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
         }
-        bool tmpflag;
-        int tmpthread;
-        for (;qlock.test_and_set(););
-        if (tmpflag = !idleq.empty()) {
-            tmpthread = idleq.front();
-            idleq.pop();
-        }
-        qlock.clear();
-        if(tmpflag) {
+        for (;!idleq.empty();) {
+            int tmpthread = idleq.front_and_pop();
             if (my_rank) {
                 workq.push(tmpthread);
                 roll_send();
@@ -157,7 +152,7 @@ long long Graphmpi::runmajor() {
                 send[2] = tot_ans;
             }
             for (; buft != bufw; update_send());
-            MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
+            if (comm_sz > 1) MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
             break;
         }
     }
@@ -173,9 +168,7 @@ Graphmpi::~Graphmpi() {
 
 int* Graphmpi::get_edge_range() {
     int thread_num = omp_get_thread_num();
-    for (;qlock.test_and_set(););
     idleq.push(thread_num);
-    qlock.clear();
     for (;lock[thread_num].test_and_set(););
     return ~data[thread_num][1] ? data[thread_num] : nullptr;
 }
@@ -187,6 +180,10 @@ void Graphmpi::report(long long local_ans) {
     idlethreadcnt++;
     printf("node = %d, thread = %d, local_ans = %lld, time = %f\n", my_rank, omp_get_thread_num(), local_ans, get_wall_time() - starttime);
     fflush(stdout);
+}
+
+void Graphmpi::set_loop_flag() {
+    loop_flag = true;
 }
 
 void Graphmpi::set_loop(int *data, int size) {
@@ -201,4 +198,25 @@ void Graphmpi::get_loop(int *&data, int &size) {
         data = loop_data[k];
         size = loop_size[k];
     }
+}
+
+Bx2k256Queue::Bx2k256Queue() {
+    memset(q, -1, sizeof(q));
+    h = t = 0;
+    lock.clear();
+}
+
+bool Bx2k256Queue::empty() {
+    return h == t;
+}
+
+void Bx2k256Queue::push(int k) {
+    for (;lock.test_and_set(););
+    q[t] = k;
+    t++;
+    lock.clear();
+}
+
+int Bx2k256Queue::front_and_pop() {
+    return q[h++];
 }

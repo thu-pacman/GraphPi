@@ -368,7 +368,7 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
     {
 #pragma omp master
         {
-            gm.init(thread_count, this, schedule.get_size());
+            gm.init(thread_count, this, schedule);
         }
 #pragma omp barrier //mynodel have to be calculated before running other threads
 #pragma omp master
@@ -382,7 +382,7 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
             VertexSet tmp_set;
             subtraction_set.init();
             int last = -1;
-            gm.loop_flag = true;
+            gm.set_loop_flag();
             auto match_edge = [&](int vertex, int *data, int size) {
                 if (vertex != last) {
                     if (~last) subtraction_set.pop_back();
