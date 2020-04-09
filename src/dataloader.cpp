@@ -170,16 +170,20 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
     printf("Load begin in %s\n",path);
     g = new Graph();
     g->tri_cnt = Twitter_tri_cnt;
-    scanf("%d%u", &g->v_cnt, &g->e_cnt);
-    int mx_degree;
-    scanf("%d", &mx_degree);
+    unsigned int* buffer = new unsigned int[41652230u + 2936729768u + 10u];
+    FILE* file = fopen(path, "r");
+    fread(buffer, sizeof(unsigned int), 41652230u + 2936729768u + 4, file);
+    g->v_cnt = buffer[0];
+    g->e_cnt = buffer[1];
+    int mx_degree = buffer[2];
     VertexSet::max_intersection_size = std::max( VertexSet::max_intersection_size, mx_degree);
     g->edge = new int [g->e_cnt];
     g->vertex = new unsigned int [g->v_cnt + 1];
     for(int i = 0; i < g->v_cnt + 1; ++i)
-        scanf("%u", &g->vertex[i]);
+        g->vertex[i] = buffer[ 3 + i];
     for(unsigned int i = 0; i < g->e_cnt; ++i)
-        scanf("%d", &g->edge[i]);
+        g->edge[i] = buffer[4 + g->v_cnt + i];
+    delete[] buffer;
     return true;
 }
 
