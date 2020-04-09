@@ -399,11 +399,11 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
             };
             for (int *data; data = gm.get_edge_range();) {
                 match_edge(data[1], edge + data[2], data[3] - data[2]);
-                for (int i = 1; i <= data[4]; i++) {
+                /*for (int i = 1; i <= data[4]; i++) {
                     int l, r;
                     get_edge_index(data[1] + i, l, r);
                     match_edge(data[1] + i, edge + l, r - l);
-                }
+                }*/
             }
             delete[] vertex_set;
             gm.report(local_ans);

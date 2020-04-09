@@ -28,9 +28,9 @@ public:
     void get_loop(int*&, int&);
 
 private:
-    static const int MAXTHREAD = 24, CHUNK_CONST = 1, MESSAGE_SIZE = 16, ROLL_SIZE = 32768;
+    static const int MAXTHREAD = 24, MESSAGE_SIZE = 5;
     Graph* graph;
-    int comm_sz, my_rank, idlethreadcnt, threadcnt, chunksize, *data[MAXTHREAD], *loop_data[MAXTHREAD], loop_size[MAXTHREAD];
+    int comm_sz, my_rank, idlethreadcnt, threadcnt, *data[MAXTHREAD], *loop_data[MAXTHREAD], loop_size[MAXTHREAD], mpi_chunk_size, omp_chunk_size;
     long long node_ans;
     double starttime;
     bool loop_flag = false, skip_flag; // loop_flag is set when using mpi; skip_flag is set when there is a restriction on the first pattern edge
