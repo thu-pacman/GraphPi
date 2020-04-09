@@ -11,25 +11,13 @@
 #include <algorithm>
 
 int main(int argc,char *argv[]) {
-    Graph *g;
-    DataLoader D;
+   
+    int size = atoi(argv[1]);
+    char* adj_mat = argv[2];
 
-    std::string type = "Patents";
-    std::string path = "/home/zms/patents_input";
-    DataType my_type;
-    if(type == "Patents") my_type = DataType::Patents;
-    else {
-        printf("invalid DataType!\n");
-    }
-
-    assert(D.load_data(g,my_type,path.c_str())==true); 
-
-    printf("Load data success!\n");
-    fflush(stdout);
-    
-    Pattern pattern(PatternType::House);
+    Pattern pattern(size, adj_mat);
     bool is_valid;
-    Schedule schedule(pattern, is_valid, 0, 0, 0, 0);
+    Schedule schedule(pattern, is_valid, 0, 0, 0, 0, 0, 0);
     std::vector< std::vector< std::pair<int,int> > > restricts;
     schedule.restricts_generate(schedule.get_adj_mat_ptr(), restricts);
     schedule.print_schedule();
@@ -38,6 +26,5 @@ int main(int argc,char *argv[]) {
             printf("(%d,%d)",p.first,p.second);
         puts("");
     }
-
-    delete g;
+    return 0;
 }
