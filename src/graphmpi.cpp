@@ -43,26 +43,25 @@ long long Graphmpi::runmajor() {
     std::queue<int> workq;
     graph->get_edge_index(0, edgel, edger);
     auto get_send = [&](int *send) {
-        send[0] = OVERWORK;
-        if (cur < graph->v_cnt && skip_flag && graph->edge[edgel] >= cur) {
+        auto next_cur = [&]() {
             cur++;
+            int k = std::max(graph->v_cnt / 10, 1);
+            if (cur % k == 0) {
+                printf("nearly %d out of 10 task assigned, time = %f\n", cur / k, get_wall_time() - starttime);
+                fflush(stdout);
+            }
             if (cur < graph->v_cnt) graph->get_edge_index(cur, edgel, edger);
-        }
+        };
+        send[0] = OVERWORK;
+        if (cur < graph->v_cnt && skip_flag && graph->edge[edgel] >= cur) next_cur();
         if (cur == graph->v_cnt) send[1] = -1;
         else {
-            //int chunksize = kkk - (long long)cur * kkk / graph->v_cnt;
             send[1] = cur;
             send[2] = edgel;
             if (edger - edgel > mpi_chunk_size) send[3] = edgel += mpi_chunk_size;
             else {
                 send[3] = edger;
-                cur++;
-                int k = std::max(graph->v_cnt / 10, 1);
-                if (cur % k == 0) {
-                    printf("nearly %d out of 10 task assigned, time = %f\n", cur / k, get_wall_time() - starttime);
-                    fflush(stdout);
-                }
-                if (cur < graph->v_cnt) graph->get_edge_index(cur, edgel, edger);
+                next_cur();
             }
         }
     };
@@ -128,15 +127,10 @@ long long Graphmpi::runmajor() {
             }
             else if (local_data[2] != local_data[3]) {
                 int tmpthread = idleq.front_and_pop();
-                data[tmpthread][1] = local_data[1];
-                data[tmpthread][2] = local_data[2];
-                local_data[2] += omp_chunk_size;
-                if (local_data[2] >= local_data[3]) {
-                    local_data[2] = local_data[3];
-                    get_new_local_data();
-                }
-                data[tmpthread][3] = local_data[2];
+                memcpy(data[tmpthread], local_data, sizeof(local_data));
+                data[tmpthread][3] = local_data[2] = std::min(local_data[2] + omp_chunk_size, local_data[3]);
                 lock[tmpthread].clear();
+                if (local_data[2] == local_data[3]) get_new_local_data();
             }
         }
         if (idlethreadcnt == threadcnt - 1) {
