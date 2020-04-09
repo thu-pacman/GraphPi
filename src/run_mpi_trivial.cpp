@@ -12,9 +12,9 @@
 
 int main(int argc,char *argv[])
 {
-    if (argc != 4)
+    if (argc != 5)
     {
-        printf("Please give a name of dataset, like Patents, a thread number, and a pattern input filename.");
+        printf("Please give a name of dataset, like Patents, a thread number, a pattern input filename, and a exclusion optimization flag.");
         return -1;
     }
     Graph *g;
@@ -44,7 +44,7 @@ int main(int argc,char *argv[])
         }
         std::vector < std::pair<int, int> > pairs;
         bool is_pattern_valid;
-        bool use_in_exclusion_optimize = true;
+        bool use_in_exclusion_optimize = (argv[4][0] == '1');
         Schedule schedule(p, is_pattern_valid, 0, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
         schedule.aggressive_optimize(pairs); // check if the isomorphism_vec size can be deleted to 1 by restriction.("assert(isomorphism_vec.size() == 1);")
         schedule.add_restrict(pairs);
