@@ -386,8 +386,8 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
             auto match_edge = [&](int vertex, int *data, int size) {
                 if (vertex != last) {
                     if (~last) subtraction_set.pop_back();
-                    int l, r;
-                    get_edge_index(vertex, l, r);
+                    unsigned int l, r;
+                    int x, y; get_edge_index(vertex, x, y);l = x; r = y;// rara 
                     for (int prefix_id = schedule.get_last(0); prefix_id != -1; prefix_id = schedule.get_next(prefix_id)) {
                         vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, edge + l, r - l, prefix_id);
                     }
@@ -397,7 +397,7 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
                 gm.set_loop(data, size);
                 pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, tmp_set, local_ans, 1);
             };
-            for (int *data; data = gm.get_edge_range();) {
+            for (unsigned int *data; data = gm.get_edge_range();) {
                 match_edge(data[1], edge + data[2], data[3] - data[2]);
                 /*for (int i = 1; i <= data[4]; i++) {
                     int l, r;
