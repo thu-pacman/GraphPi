@@ -42,12 +42,14 @@ int main(int argc,char *argv[])
             fs >> u >> v;
             p.add_edge(u, v);
         }
-        std::vector < std::pair<int, int> > pairs;
+        //std::vector < std::pair<int, int> > pairs;
         bool is_pattern_valid;
         bool use_in_exclusion_optimize = (argv[4][0] == '1');
-        Schedule schedule(p, is_pattern_valid, 0, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
-        schedule.aggressive_optimize(pairs); // check if the isomorphism_vec size can be deleted to 1 by restriction.("assert(isomorphism_vec.size() == 1);")
-        schedule.add_restrict(pairs);
+        int performance_type = 0;
+        int restricts_type = 1;
+        Schedule schedule(p, is_pattern_valid, performance_type, restricts_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
+        //schedule.aggressive_optimize(pairs); // check if the isomorphism_vec size can be deleted to 1 by restriction.("assert(isomorphism_vec.size() == 1);")
+        //schedule.add_restrict(pairs);
         double start_time = get_wall_time();
         long long ans_aggressive = g->pattern_matching_mpi(schedule, thread_count);
         double end_time = get_wall_time();

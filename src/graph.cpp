@@ -138,7 +138,7 @@ void Graph::tc_mt(long long *global_ans) {
     }
 }
 
-void Graph::get_edge_index(int v, int& l, int& r) const
+void Graph::get_edge_index(int v, unsigned int& l, unsigned int& r) const
 {
     l = vertex[v];
     r = vertex[v + 1];
