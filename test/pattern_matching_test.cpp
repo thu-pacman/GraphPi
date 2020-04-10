@@ -9,7 +9,7 @@
 #include <string>
 #include <algorithm>
 
-TEST(pattern_matching_test, pattern_matching_patents_triangle) {
+TEST(pattern_matching_test, pattern_matching_patents_Cycle6Tri) {
     Graph *g;
     DataLoader D;
     
@@ -26,7 +26,7 @@ TEST(pattern_matching_test, pattern_matching_patents_triangle) {
     printf("Load data success!\n");
     fflush(stdout);
     
-    Pattern pattern(PatternType::Rectangle);
+    Pattern pattern(PatternType::Cycle_6_Tri);
 
     bool is_pattern_valid = false;
     int performance_modeling_type = 0;

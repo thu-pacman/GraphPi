@@ -78,12 +78,13 @@ TEST(schedule_compare_test, schedule_compare_patents) {
     printf("Load data success!\n");
     fflush(stdout);
 
-    test_pattern(g, PatternType::Rectangle);
-    test_pattern(g, PatternType::Pentagon);
+//    test_pattern(g, PatternType::Rectangle);
+    test_pattern(g, PatternType::QG3);
+/*    test_pattern(g, PatternType::Pentagon);
     test_pattern(g, PatternType::House);
     test_pattern(g, PatternType::Hourglass);
     test_pattern(g, PatternType::Cycle_6_Tri);
     test_pattern(g, PatternType::Clique_7_Minus);
-
+*/
     delete g;
 }

@@ -42,9 +42,7 @@ long long Graphmpi::runmajor() {
     int idlenodecnt = 0, cur = 0;
     unsigned int edgel, edger, *send;
     std::queue<int> workq;
-    int xx, yy;
-    graph->get_edge_index(0, xx, yy);//rara
-    edgel = xx; edger = yy;
+    graph->get_edge_index(0, edgel, edger);
     auto get_send = [&](unsigned int *send) {
         auto next_cur = [&]() {
             cur++;
@@ -54,9 +52,7 @@ long long Graphmpi::runmajor() {
                 fflush(stdout);
             }
             if (cur < graph->v_cnt) {
-                int x, y;
-                graph->get_edge_index(cur, x, y);//rara
-                edgel = x; edger = y;
+                graph->get_edge_index(cur, edgel, edger);
             }
         };
         send[0] = OVERWORK;

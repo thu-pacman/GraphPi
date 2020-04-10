@@ -38,3 +38,50 @@ bool is_equal_adj_mat(const int* adj_mat1, const int* adj_mat2, int size) {
                 return false;
     return true;
 }
+
+void GetDataType(DataType &type, const std::string str) {
+    type = DataType::Invalid;
+    
+    if( str == "Patents" ) {
+        type = DataType::Patents;
+    }
+    if(str == "Orkut" ) {
+        type = DataType::Orkut;
+    }
+    if(str == "complete8" ) {
+        type = DataType::complete8;
+    }
+    if(str == "LiveJournal" ) {
+        type = DataType::LiveJournal;
+    }
+    if(str == "MiCo" ) {
+        type = DataType::MiCo;
+    }
+    if(str == "Twitter" ) {
+        type = DataType::Twitter;
+    }
+    if(str == "CiteSeer" ) {
+        type = DataType::CiteSeer;
+    }
+    if(str == "Wiki-Vote" ) {
+        type = DataType::Wiki_Vote;
+    }
+}
+
+int read_int() {
+    char ch = getchar();
+    while((ch < '0' || ch > '9') && ch !='-') ch = getchar();
+    int tag = 1;
+    if(ch == '-') tag = -1, ch = getchar();
+    int x = 0;
+    while( ch >= '0' && ch <= '9') x = x* 10 + ch -'0', ch = getchar();
+    return x * tag;
+}
+
+unsigned int read_unsigned_int() {
+    char ch = getchar();
+    while((ch < '0' || ch > '9') ) ch = getchar();
+    unsigned int x = 0;
+    while( ch >= '0' && ch <= '9') x = x* 10 + ch -'0', ch = getchar();
+    return x;
+}
