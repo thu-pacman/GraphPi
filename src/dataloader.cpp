@@ -84,10 +84,10 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
         e[tmp_e++] = std::make_pair(y,x);
         ++degree[x];
         ++degree[y];
-        if(tmp_e % 1000000u == 0u) {
-            printf("load %u edges\n",tmp_e);
-            fflush(stdout);
-        }
+        //if(tmp_e % 1000000u == 0u) {
+        //    printf("load %u edges\n",tmp_e);
+        //    fflush(stdout);
+        //}
     }
 
     // oriented_type == 0 do nothing

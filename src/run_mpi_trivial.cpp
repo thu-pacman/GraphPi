@@ -9,9 +9,11 @@
 #include <string>
 #include <cstdlib>
 #include <fstream>
+#include <mpi.h>
 
 int main(int argc,char *argv[])
 {
+
     if (argc != 5)
     {
         printf("Please give a name of dataset, like Patents, a thread number, a pattern input filename, and a exclusion optimization flag.");
@@ -22,13 +24,16 @@ int main(int argc,char *argv[])
     
     std::string path = std::string(argv[1]);
     int thread_count = atoi(argv[2]);
-    DataType my_type = DataType::Patents;
-    
+    //DataType my_type = DataType::Twitter;
+    DataType my_type = DataType::Orkut;
+
     if (D.load_data(g,my_type,path.c_str()) != true)
     {
         printf("Load error.");
         return -1;
     }
+    printf("load data successful!\n");
+    fflush(stdout);
 
     std::fstream fs(argv[3]);
     int t;
@@ -45,9 +50,11 @@ int main(int argc,char *argv[])
         //std::vector < std::pair<int, int> > pairs;
         bool is_pattern_valid;
         bool use_in_exclusion_optimize = (argv[4][0] == '1');
-        int performance_type = 0;
+        int performance_type = 1;
         int restricts_type = 1;
         Schedule schedule(p, is_pattern_valid, performance_type, restricts_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
+        printf("build schedule successful!\n");
+        fflush(stdout);
         //schedule.aggressive_optimize(pairs); // check if the isomorphism_vec size can be deleted to 1 by restriction.("assert(isomorphism_vec.size() == 1);")
         //schedule.add_restrict(pairs);
         double start_time = get_wall_time();

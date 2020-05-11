@@ -25,7 +25,7 @@ void Graphmpi::init(int _threadcnt, Graph* _graph, const Schedule& schedule) {
         lock[i].test_and_set();
     }
     const int CHUNK_CONST = 70;
-    omp_chunk_size = std::max(int((long long)(graph->v_cnt) * CHUNK_CONST / graph->e_cnt), 1);
+    omp_chunk_size = std::max(int((long long)(graph->v_cnt) * CHUNK_CONST / graph->e_cnt), 8);
     mpi_chunk_size = (threadcnt - 1) * omp_chunk_size;
     skip_flag = ~schedule.get_restrict_last(1);
     printf("mpi_csize = %d, omp_csize = %d\n", mpi_chunk_size, omp_chunk_size);
@@ -34,7 +34,7 @@ void Graphmpi::init(int _threadcnt, Graph* _graph, const Schedule& schedule) {
 
 long long Graphmpi::runmajor() {
     long long tot_ans = 0;
-    const int IDLE = 2, END = 3, OVERWORK = 4, REPORT = 5, SERVER = 0, ROLL_SIZE = 32768;
+    const int IDLE = 2, END = 3, OVERWORK = 4, REPORT = 5, SERVER = 0, ROLL_SIZE = 327680;
     static unsigned int recv[MESSAGE_SIZE], local_data[MESSAGE_SIZE];
     MPI_Request sendrqst, recvrqst;
     MPI_Status status;
@@ -46,9 +46,9 @@ long long Graphmpi::runmajor() {
     auto get_send = [&](unsigned int *send) {
         auto next_cur = [&]() {
             cur++;
-            int k = std::max(graph->v_cnt / 10, 1);
+            int k = std::max(graph->v_cnt / 100, 1);
             if (cur % k == 0) {
-                printf("nearly %d out of 10 task assigned, time = %f\n", cur / k, get_wall_time() - starttime);
+                printf("nearly %d out of 100 task assigned, time = %f\n", cur / k, get_wall_time() - starttime);
                 fflush(stdout);
             }
             if (cur < graph->v_cnt) {
