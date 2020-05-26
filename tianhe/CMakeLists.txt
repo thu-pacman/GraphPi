@@ -12,3 +12,6 @@ TARGET_LINK_LIBRARIES(performance_test graph_mining)
 
 ADD_EXECUTABLE(schedules_test schedules_test.cpp)
 TARGET_LINK_LIBRARIES(schedules_test graph_mining)
+
+ADD_EXECUTABLE(schedules_our_generator_test schedules_our_generator_test.cpp)
+TARGET_LINK_LIBRARIES(schedules_our_generator_test graph_mining)
