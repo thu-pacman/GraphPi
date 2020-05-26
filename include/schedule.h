@@ -33,6 +33,7 @@ public:
     inline int get_restrict_last(int i) const { return restrict_last[i];}
     inline int get_restrict_next(int i) const { return restrict_next[i];}
     inline int get_restrict_index(int i) const { return restrict_index[i];}
+    inline int get_k_val() const { return k_val;} // see below (the k_val's definition line) before using this function
     int get_max_degree() const;
     int get_multiplicity() const;
     void aggressive_optimize(std::vector< std::pair<int,int> >& ordered_pairs) const;
@@ -68,6 +69,8 @@ private:
     int total_prefix_num;
     int total_restrict_num;
     int in_exclusion_optimize_num;
+    int k_val; // inner k loop, WARNING: this val not always meaningful @TODO here
+               // only when performance_modeling_type == 1 , this val will be calculated.
 
     void build_loop_invariant();
     int find_father_prefix(int data_size, const int* data);

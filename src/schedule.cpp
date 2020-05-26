@@ -48,6 +48,7 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
             for(const auto &vec : candidate_permutations) {
                 max_val = std::max(max_val, get_vec_optimize_num(vec));
             }
+            k_val = max_val;
             std::vector< std::vector<int> > tmp;
             tmp.clear();
             for(const auto &vec : candidate_permutations) 
