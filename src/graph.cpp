@@ -261,7 +261,7 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
             subtraction_set.pop_back();
         }
         double end_time = get_wall_time();
-        printf("my thread time %.6lf\n", end_time - start_time);
+        printf("my thread time %d %.6lf\n", omp_get_thread_num(), end_time - start_time);
         delete[] vertex_set;
         // TODO : Computing multiplicty for a pattern
         global_ans += local_ans;
