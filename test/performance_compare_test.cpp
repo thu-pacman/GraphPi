@@ -21,7 +21,7 @@ void test_pattern(Graph* g, PatternType type) {
     int performance_modeling_type;
     bool use_in_exclusion_optimize = false;
     
-    performance_modeling_type = 2;
+    performance_modeling_type = 1;
     Schedule schedule_our(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
@@ -60,9 +60,10 @@ void test_pattern(Graph* g, PatternType type) {
     for(int i = 0; i < gz_pairs.size(); ++i)
         printf("(%d,%d)",gz_pairs[i].first, gz_pairs[i].second);
     puts("");
+    fflush(stdout);
 }
 
-TEST(restricts_compare_test, restricts_compare_patents) {
+TEST(performance_compare_test, performance_compare_patents) {
     Graph *g;
     DataLoader D;
     
@@ -81,12 +82,14 @@ TEST(restricts_compare_test, restricts_compare_patents) {
     printf("Load data success!\n");
     fflush(stdout);
 
+    test_pattern(g, PatternType::Cycle_6_Tri);
+    test_pattern(g, PatternType::Cycle_6_Tri);
+    test_pattern(g, PatternType::Cycle_6_Tri);
 //    test_pattern(g, PatternType::Rectangle);
 //    test_pattern(g, PatternType::QG3);
 //    test_pattern(g, PatternType::Pentagon);
 //    test_pattern(g, PatternType::House);
 //    test_pattern(g, PatternType::Hourglass);
-    test_pattern(g, PatternType::Cycle_6_Tri);
 //    test_pattern(g, PatternType::Clique_7_Minus);
 
     delete g;

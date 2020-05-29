@@ -3,27 +3,41 @@
 #include <queue>
 #include <atomic>
 
+class Bx2k256Queue {
+public:
+    Bx2k256Queue();
+    bool empty();
+    void push(int);
+    int front_and_pop();// can only be called by main thread
+
+private:
+    std::atomic_flag lock;
+    unsigned char h, t;
+    int q[256];
+};
+
 class Graphmpi {
 public:
     static Graphmpi& getinstance();
-    std::pair<int, int> init(int thread_count, Graph *graph); // get node range
+    void init(int thread_count, Graph *graph, const Schedule& schedule); // get node range
     long long runmajor(); // mpi uses on major thread
-    int* getneighbor(int u); // return a int[] end with a -1
-    int getdegree(); // this function can only be called immediately after calling getneighbor
-    bool include(int u); // return whether u is in this process
-    std::pair<int, int> get_vertex_range();
+    unsigned int* get_edge_range();
     void report(long long local_ans);
-    void end();
+    void set_loop_flag();
+    void set_loop(int*, int);
+    void get_loop(int*&, int&);
 
 private:
-    static const int MAXN = 1 << 22, MAXTHREAD = 24, chunksize = 8;
+    static const int MAXTHREAD = 24, MESSAGE_SIZE = 5;
     Graph* graph;
-    int comm_sz, my_rank, mynodel, mynoder, blocksize, idlethreadcnt, threadcnt, global_vertex, vertex[MAXTHREAD];
-    long long node_ans = 0;
+    int *loop_data[MAXTHREAD], comm_sz, my_rank, idlethreadcnt, threadcnt, mpi_chunk_size, omp_chunk_size;
+    unsigned int loop_size[MAXTHREAD], *data[MAXTHREAD];
+    long long node_ans;
     double starttime;
-    std::queue<int> requestq, idleq;
-    static int data[MAXTHREAD][MAXN], qrynode[MAXTHREAD], qrydest[MAXTHREAD], length[MAXTHREAD];
-    std::atomic_flag lock[MAXTHREAD], global_vertex_lock;
+    bool loop_flag = false, skip_flag; // loop_flag is set when using mpi; skip_flag is set when there is a restriction on the first pattern edge
+    Bx2k256Queue idleq;
+    //std::queue<int> idleq;
+    std::atomic_flag lock[MAXTHREAD], qlock;
     Graphmpi();
     Graphmpi(const Graphmpi&&) = delete;
     Graphmpi(const Graphmpi&) = delete;

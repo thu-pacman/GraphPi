@@ -17,13 +17,14 @@ void test_pattern(Graph* g, PatternType type) {
 
     bool is_pattern_valid;
     int performance_modeling_type;
+    bool use_in_exclusion_optimize = false;
     
     performance_modeling_type = 1;
-    Schedule schedule_our(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
+    Schedule schedule_our(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     performance_modeling_type = 2;
-    Schedule schedule_gz(pattern, is_pattern_valid, performance_modeling_type, g->v_cnt, g->e_cnt);
+    Schedule schedule_gz(pattern, is_pattern_valid, performance_modeling_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt);
     ASSERT_EQ(is_pattern_valid, true);
 
     std::vector< std::pair<int,int> > gz_pairs;
@@ -77,12 +78,13 @@ TEST(schedule_compare_test, schedule_compare_patents) {
     printf("Load data success!\n");
     fflush(stdout);
 
-    test_pattern(g, PatternType::Rectangle);
-    test_pattern(g, PatternType::Pentagon);
+//    test_pattern(g, PatternType::Rectangle);
+    test_pattern(g, PatternType::QG3);
+/*    test_pattern(g, PatternType::Pentagon);
     test_pattern(g, PatternType::House);
     test_pattern(g, PatternType::Hourglass);
     test_pattern(g, PatternType::Cycle_6_Tri);
     test_pattern(g, PatternType::Clique_7_Minus);
-
+*/
     delete g;
 }

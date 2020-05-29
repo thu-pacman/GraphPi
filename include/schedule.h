@@ -10,10 +10,14 @@ class Schedule
 {
 public:
     //TODO : more kinds of constructors to construct different Schedules from one Pattern
-    Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, int v_cnt, int e_cnt);
+    Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, int restricts_type, bool use_in_exclusion_optimize, int v_cnt, unsigned int e_cnt, long long tri_cnt = 0);
     // performance_modeling type = 0 : not use modeling
     //                      type = 1 : use our modeling
     //                      type = 2 : use GraphZero's modeling
+    //                      type = 3 : use naive modeling
+    // restricts_type = 0 : not use restricts
+    //                = 1 : use our restricts
+    //                = 2 : use GraphZero's restricts
     Schedule(const int* _adj_mat, int _size);
     ~Schedule();
     inline int get_total_prefix_num() const { return total_prefix_num;}
@@ -23,6 +27,7 @@ public:
     inline int get_last(int i) const { return last[i];}
     inline int get_next(int i) const { return next[i];}
     inline int get_in_exclusion_optimize_num() const { return in_exclusion_optimize_num;}
+    int get_in_exclusion_optimize_num_when_not_optimize();
     void add_restrict(const std::vector< std::pair<int, int> >& restricts);
     inline int get_total_restrict_num() const { return total_restrict_num;}
     inline int get_restrict_last(int i) const { return restrict_last[i];}
@@ -33,7 +38,8 @@ public:
     void aggressive_optimize(std::vector< std::pair<int,int> >& ordered_pairs) const;
     void aggressive_optimize_get_all_pairs(std::vector< std::vector< std::pair<int,int> > >& ordered_pairs_vector);
     void aggressive_optimize_dfs(Pattern base_dag, std::vector< std::vector<int> > isomorphism_vec, std::vector< std::vector< std::vector<int> > > permutation_groups, std::vector< std::pair<int,int> > ordered_pairs, std::vector< std::vector< std::pair<int,int> > >& ordered_pairs_vector);
-    void restrict_selection(int v_cnt, int e_cnt, std::vector< std::vector< std::pair<int,int> > > ordered_pairs_vector, std::vector< std::pair<int,int> >& best_restricts) const;
+    void restrict_selection(int v_cnt, unsigned int e_cnt, long long tri_cnt, std::vector< std::vector< std::pair<int,int> > > ordered_pairs_vector, std::vector< std::pair<int,int> >& best_restricts) const;
+    void restricts_generate(const int* cur_adj_mat, std::vector< std::vector< std::pair<int,int> > > &restricts);
 
     void GraphZero_aggressive_optimize(std::vector< std::pair<int,int> >& ordered_pairs) const;
     void GraphZero_get_automorphisms(std::vector< std::vector<int> > &Aut) const;
@@ -41,14 +47,13 @@ public:
     std::vector< std::vector<int> > get_isomorphism_vec() const;
     static std::vector< std::vector<int> > calc_permutation_group(const std::vector<int> vec, int size);
     inline const int* get_adj_mat_ptr() const {return adj_mat;}
-    
-    //use principle of inclusion-exclusion to optimize
-    void init_in_exclusion_optimize(int optimize_num);
+        
 
     void print_schedule() const;
 
     std::vector< std::vector< std::vector<int> > >in_exclusion_optimize_group;
     std::vector< int > in_exclusion_optimize_val;
+    std::vector< std::pair<int,int> > restrict_pair;
 private:
     int* adj_mat;
     int* father_prefix_id;
@@ -67,7 +72,20 @@ private:
     void build_loop_invariant();
     int find_father_prefix(int data_size, const int* data);
     void get_full_permutation(std::vector< std::vector<int> >& vec, bool use[], std::vector<int> tmp_vec, int depth) const;
-    void performance_modeling(int* best_order, int v_cnt, int e_cnt);
-    void GraphZero_performance_modeling(int* best_order, int v_cnt, int e_cnt);
-    void get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, int* in_exclusion_val);
+    void performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, unsigned int e_cnt);
+    void bug_performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, unsigned int e_cnt);
+    void new_performance_modeling(int* best_order, std::vector< std::vector<int> > &candidates, int v_cnt, unsigned int e_cnt, long long tri_cnt);
+    void GraphZero_performance_modeling(int* best_order, int v_cnt, unsigned int e_cnt);
+
+    double our_estimate_schedule_restrict(const std::vector<int> &order, const std::vector< std::pair<int,int> > &pairs, int v_cnt, unsigned int e_cnt, long long tri_cnt);
+    double GraphZero_estimate_schedule_restrict(const std::vector<int> &order, const std::vector< std::pair<int,int> > &pairs, int v_cnt, unsigned int e_cnt);
+    double Naive_estimate_schedule_restrict(const std::vector<int> &order, const std::vector< std::pair<int,int> > &paris, int v_cnt, unsigned int e_cnt);
+
+    void get_in_exclusion_optimize_group(int depth, int* id, int id_cnt, int* in_exclusion_val); 
+    //use principle of inclusion-exclusion to optimize
+    void init_in_exclusion_optimize();
+    
+    int get_vec_optimize_num(const std::vector<int> &vec);
+
+    void remove_invalid_permutation(std::vector< std::vector<int> > &candidate_permutations);
 };

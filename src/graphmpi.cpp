@@ -5,14 +5,12 @@
 #include <omp.h>
 #include <cstdio>
 
-int Graphmpi::data[][Graphmpi::MAXN] = {}, Graphmpi::qrynode[] = {}, Graphmpi::qrydest[] = {}, Graphmpi::length[] = {};
-
 Graphmpi& Graphmpi::getinstance() {
     static Graphmpi gm;
     return gm;
 }
 
-std::pair<int, int> Graphmpi::init(int _threadcnt, Graph* _graph) {
+void Graphmpi::init(int _threadcnt, Graph* _graph, const Schedule& schedule) {
     threadcnt = _threadcnt;
     graph = _graph;
     int provided;
@@ -21,123 +19,131 @@ std::pair<int, int> Graphmpi::init(int _threadcnt, Graph* _graph) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Barrier(MPI_COMM_WORLD);
     starttime = get_wall_time();
-    blocksize = (graph->v_cnt + comm_sz - 1) / comm_sz;
-    int k = comm_sz - my_rank - 1;
-    /*global_vertex = mynodel = blocksize * k;
-    mynoder = k < comm_sz - 1 ? blocksize * (k + 1) : graph->v_cnt;*/
-    if (my_rank) {
-        global_vertex = mynodel = mynoder = 0;
-    }
-    else {
-        global_vertex = mynodel = 0;
-        mynoder = graph->v_cnt;
-    }
     idlethreadcnt = 0;
-    for (int i = 0; i < MAXTHREAD; i++) lock[i].test_and_set();
-    global_vertex_lock.clear();
-    return std::make_pair(mynodel, mynoder);
+    for (int i = 0; i < threadcnt; i++) {
+        data[i] = new unsigned int[MESSAGE_SIZE];
+        lock[i].test_and_set();
+    }
+    const int CHUNK_CONST = 70;
+    omp_chunk_size = std::max(int((long long)(graph->v_cnt) * CHUNK_CONST / graph->e_cnt), 8);
+    mpi_chunk_size = (threadcnt - 1) * omp_chunk_size;
+    skip_flag = ~schedule.get_restrict_last(1);
+    printf("mpi_csize = %d, omp_csize = %d\n", mpi_chunk_size, omp_chunk_size);
+    fflush(stdout);
 }
 
 long long Graphmpi::runmajor() {
     long long tot_ans = 0;
-    const int /*REQ = 0, ANS = 1, */IDLE = 2, END = 3, OVERWORK = 4, REPORT = 5, SERVER = 0;
-    static int recv[MAXN * MAXTHREAD], send[MAXN * MAXTHREAD];
+    const int IDLE = 2, END = 3, OVERWORK = 4, REPORT = 5, SERVER = 0, ROLL_SIZE = 327680;
+    static unsigned int recv[MESSAGE_SIZE], local_data[MESSAGE_SIZE];
     MPI_Request sendrqst, recvrqst;
     MPI_Status status;
-    MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
-    int idlenodecnt = 0;
+    MPI_Irecv(recv, sizeof(recv), MPI_UNSIGNED, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
+    int idlenodecnt = 0, cur = 0;
+    unsigned int edgel, edger, *send;
     std::queue<int> workq;
+    graph->get_edge_index(0, edgel, edger);
+    auto get_send = [&](unsigned int *send) {
+        auto next_cur = [&]() {
+            cur++;
+            int k = std::max(graph->v_cnt / 100, 1);
+            if (cur % k == 0) {
+                printf("nearly %d out of 100 task assigned, time = %f\n", cur / k, get_wall_time() - starttime);
+                fflush(stdout);
+            }
+            if (cur < graph->v_cnt) {
+                graph->get_edge_index(cur, edgel, edger);
+            }
+        };
+        send[0] = OVERWORK;
+        if (cur < graph->v_cnt && skip_flag && graph->edge[edgel] >= cur) next_cur();
+        if (cur == graph->v_cnt) send[1] = -1;
+        else {
+            send[1] = cur;
+            send[2] = edgel;
+            if (edger - edgel > mpi_chunk_size) send[3] = edgel += mpi_chunk_size;
+            else {
+                send[3] = edger;
+                next_cur();
+            }
+        }
+    };
+    int buft = 0, bufw = 0;
+    static unsigned int buf[ROLL_SIZE][MESSAGE_SIZE + 1];
+    auto roll_send = [&]() {
+        send = buf[bufw] + 1;
+        bufw = (bufw + 1) % ROLL_SIZE;
+    };
+    auto update_send = [&]() {
+        if (buft != bufw) {
+            static bool ini_flag = false;
+            bool flag;
+            if (ini_flag) {
+                int testflag;
+                MPI_Test(&sendrqst, &testflag, MPI_STATUS_IGNORE);
+                flag = ini_flag;
+            }
+            else ini_flag = flag = true;
+            if (flag) {
+                MPI_Isend(buf[buft] + 1, MESSAGE_SIZE, MPI_UNSIGNED, buf[buft][0], 0, MPI_COMM_WORLD, &sendrqst);
+                buft = (buft + 1) % ROLL_SIZE;
+            }
+        }
+    };
+    auto get_new_local_data = [&]() {
+        if (my_rank) {
+            roll_send();
+            send[-1] = SERVER;
+            send[0] = IDLE;
+        }
+        else get_send(local_data);
+    };
+    get_new_local_data();
     for (;;) {
+        update_send();
         int testflag = 0;
         MPI_Test(&recvrqst, &testflag, &status);
         if (testflag) {
-            int m;
-            MPI_Get_count(&status, MPI_INT, &m);
-            /*if (recv[0] == REQ) {
-                int l, r;
-                graph->get_edge_index(recv[1], l, r);
-                //MPI_Wait(&sendrqst, &status);
-                send[0] = ANS;
-                memcpy(send + 1, graph->edge + l, sizeof(graph->edge[0]) * (r - l));
-                MPI_Isend(send, r - l + 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD, &sendrqst);
+            if (recv[0] == IDLE) {
+                roll_send();
+                send[-1] = status.MPI_SOURCE;
+                get_send(send);
             }
-            else if (recv[0] == ANS) {
-                int node;
-#pragma omp critical
-                {
-                    node = requestq.front();
-                    requestq.pop();
-                }
-                memcpy(data[node], recv + 1, sizeof(recv[0]) * (m - 1));
-                data[node][m - 1] = -1;
-                length[node] = m - 1;
-                lock[node].clear();
-                waitforans = false;
-            }
-            else */if (recv[0] == IDLE) {
-                for (;global_vertex_lock.test_and_set(););
-                bool overworkflag = global_vertex + chunksize < mynoder;
-                int tmpvertex = global_vertex;
-                if (overworkflag) global_vertex += chunksize;
-                global_vertex_lock.clear();
-                send[0] = OVERWORK;
-                send[1] = overworkflag ? tmpvertex : -1;
-                MPI_Isend(send, 3, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD, &sendrqst);
+            else if (recv[0] == OVERWORK) {
+                memcpy(local_data, recv, sizeof(recv));
             }
             else if (recv[0] == END) {
                 tot_ans = (((long long)(recv[1]) << 32) | (unsigned)recv[2]);
-                for (int i = 1; i < threadcnt; i++) {
-                    length[i] = -1;
-                    lock[i].clear();
-                }
                 break;
-            }
-            else if (recv[0] == OVERWORK) {
-                vertex[workq.front()] = recv[1];
-                lock[workq.front()].clear();
-                workq.pop();
             }
             else if (recv[0] == REPORT) {
                 tot_ans += (((long long)(recv[1]) << 32) | (unsigned)recv[2]);
                 idlenodecnt++;
             }
-            MPI_Irecv(recv, sizeof(recv), MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
+            MPI_Irecv(recv, sizeof(recv), MPI_UNSIGNED, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvrqst);
         }
-        /*if (!waitforans && !requestq.empty()) {
-            int node;
-#pragma omp critical
-            {
-                node = requestq.front();
+        if (!idleq.empty()) {
+            if (local_data[1] == -1) {
+                int tmpthread = idleq.front_and_pop();
+                data[tmpthread][1] = -1;
+                lock[tmpthread].clear();
             }
-            //MPI_Wait(&sendrqst, &status);
-            send[0] = REQ;
-            send[1] = qrynode[node];
-            MPI_Isend(send, 2, MPI_INT, qrydest[node], SERVER, MPI_COMM_WORLD, &sendrqst);
-            waitforans = true;
-        }*/
-        bool idleflag;
-        int tmpthread;
-#pragma omp critical
-        {
-            idleflag = !idleq.empty();
-            if (idleflag) {
-                tmpthread = idleq.front();
-                idleq.pop();
+            else if (local_data[2] != local_data[3]) {
+                int tmpthread = idleq.front_and_pop();
+                memcpy(data[tmpthread], local_data, sizeof(local_data));
+                data[tmpthread][3] = local_data[2] = std::min(local_data[2] + omp_chunk_size, local_data[3]);
+                lock[tmpthread].clear();
+                if (local_data[2] == local_data[3]) get_new_local_data();
             }
-        }
-        if (idleflag) {
-            workq.push(tmpthread);
-            send[0] = IDLE;
-            MPI_Isend(send, 1, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
         }
         if (idlethreadcnt == threadcnt - 1) {
             idlethreadcnt = -1;
             if (my_rank) {
-                //MPI_Wait(&sendrqst, &status);
+                roll_send();
+                send[-1] = SERVER;
                 send[0] = REPORT;
                 send[1] = node_ans >> 32;
                 send[2] = node_ans;
-                MPI_Isend(send, 3, MPI_INT, 0, SERVER, MPI_COMM_WORLD, &sendrqst);
             }
             else {
                 idlenodecnt++;
@@ -146,54 +152,32 @@ long long Graphmpi::runmajor() {
         }
         if (idlenodecnt == comm_sz) {
             for (int i = 1; i < comm_sz; i++) {
-                //MPI_Wait(&sendrqst, &status);
+                roll_send();
+                send[-1] = i;
                 send[0] = END;
                 send[1] = tot_ans >> 32;
                 send[2] = tot_ans;
-                MPI_Isend(send, 3, MPI_INT, i, SERVER, MPI_COMM_WORLD, &sendrqst);
             }
+            for (; buft != bufw; update_send());
+            if (comm_sz > 1) MPI_Wait(&sendrqst, MPI_STATUS_IGNORE);
             break;
         }
     }
     return tot_ans;
 }
 
-int* Graphmpi::getneighbor(int u) {
-    int thread_num = omp_get_thread_num();
-    qrynode[thread_num] = u;
-    qrydest[thread_num] = comm_sz - 1 - (u / blocksize);
-#pragma omp critical
-    requestq.push(thread_num);
-    for (;lock[thread_num].test_and_set(););
-    return data[thread_num];
-}
-
-int Graphmpi::getdegree() {
-    return length[omp_get_thread_num()];
-}
-
-bool Graphmpi::include(int u) {
-    return mynodel <= u && u < mynoder;
-}
-
 Graphmpi::Graphmpi() {}
 
 Graphmpi::~Graphmpi() {
+    for (int i = 0; i < threadcnt; i++) delete[] data[i];
     MPI_Finalize();
 }
 
-std::pair<int, int> Graphmpi::get_vertex_range() {
-    for (;global_vertex_lock.test_and_set(););
-    bool returnflag = global_vertex < mynoder;
-    int tmpvertex = global_vertex;
-    if (returnflag) global_vertex += chunksize;
-    global_vertex_lock.clear();
-    if (returnflag) return std::make_pair(tmpvertex, std::min(mynoder, tmpvertex + chunksize));
+unsigned int* Graphmpi::get_edge_range() {
     int thread_num = omp_get_thread_num();
-#pragma omp critical
     idleq.push(thread_num);
     for (;lock[thread_num].test_and_set(););
-    return std::make_pair(vertex[thread_num], vertex[thread_num] + chunksize);
+    return ~data[thread_num][1] ? data[thread_num] : nullptr;
 }
 
 void Graphmpi::report(long long local_ans) {
@@ -201,8 +185,53 @@ void Graphmpi::report(long long local_ans) {
     node_ans += local_ans;
 #pragma omp atomic
     idlethreadcnt++;
+    printf("node = %d, thread = %d, local_ans = %lld, time = %f\n", my_rank, omp_get_thread_num(), local_ans, get_wall_time() - starttime);
+    fflush(stdout);
 }
 
-void Graphmpi::end() {
-    printf("node = %d, thread = %d, time = %f\n", my_rank, omp_get_thread_num(), get_wall_time() - starttime);
+void Graphmpi::set_loop_flag() {
+    loop_flag = true;
+}
+
+void Graphmpi::set_loop(int *data, int size) {
+    int k = omp_get_thread_num();
+    loop_data[k] = data;
+    loop_size[k] = size;
+}
+
+void Graphmpi::get_loop(int *&data, int &size) {
+    if (loop_flag) {
+        int k = omp_get_thread_num();
+        data = loop_data[k];
+        size = loop_size[k];
+    }
+}
+
+Bx2k256Queue::Bx2k256Queue() {
+    memset(q, -1, sizeof(q));
+    h = t = 0;
+    lock.clear();
+}
+
+bool Bx2k256Queue::empty() {
+    bool ans;
+    for (;lock.test_and_set(););
+    ans = (h == t);
+    lock.clear();
+    return ans;
+}
+
+void Bx2k256Queue::push(int k) {
+    for (;lock.test_and_set(););
+    q[t] = k;
+    t++;
+    lock.clear();
+}
+
+int Bx2k256Queue::front_and_pop() {
+    int ans;
+    for (;lock.test_and_set(););
+    ans = q[h++];
+    lock.clear();
+    return ans;
 }
