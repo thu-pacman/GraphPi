@@ -11,6 +11,7 @@ Graphmpi& Graphmpi::getinstance() {
 }
 
 void Graphmpi::init(int _threadcnt, Graph* _graph, const Schedule& schedule) {
+    initialized = true;
     threadcnt = _threadcnt;
     graph = _graph;
     int provided;
@@ -166,11 +167,15 @@ long long Graphmpi::runmajor() {
     return tot_ans;
 }
 
-Graphmpi::Graphmpi() {}
+Graphmpi::Graphmpi() {
+    initialized = false;    
+}
 
 Graphmpi::~Graphmpi() {
-    for (int i = 0; i < threadcnt; i++) delete[] data[i];
-    MPI_Finalize();
+    if (initialized) {
+        for (int i = 0; i < threadcnt; i++) delete[] data[i];
+        MPI_Finalize();
+    }
 }
 
 unsigned int* Graphmpi::get_edge_range() {
