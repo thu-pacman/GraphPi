@@ -38,6 +38,7 @@ private:
     Bx2k256Queue idleq;
     //std::queue<int> idleq;
     std::atomic_flag lock[MAXTHREAD], qlock;
+    bool initialized;
     Graphmpi();
     Graphmpi(const Graphmpi&&) = delete;
     Graphmpi(const Graphmpi&) = delete;
