@@ -30,6 +30,9 @@ public:
     int intersection_size_mpi(int v1,int v2);
     int intersection_size_clique(int v1,int v2);
 
+    long long intersection_times_low;
+    long long intersection_times_high;
+
     //single thread triangle counting
     long long triangle_counting();
     

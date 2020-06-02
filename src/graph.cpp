@@ -215,7 +215,7 @@ void Graph::pattern_matching_func(const Schedule& schedule, VertexSet* vertex_se
         bool is_zero = false;
         for (int prefix_id = schedule.get_last(depth); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
         {
-            vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], (int)r - l, prefix_id, vertex, clique);
+            vertex_set[prefix_id].build_vertex_set(intersection_times_low, intersection_times_high, schedule, vertex_set, &edge[l], (int)r - l, prefix_id, vertex, clique);
             if( vertex_set[prefix_id].get_size() == 0) {
                 is_zero = true;
                 break;
@@ -231,11 +231,12 @@ void Graph::pattern_matching_func(const Schedule& schedule, VertexSet* vertex_se
 
 long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bool clique)
 {
+    intersection_times_low = intersection_times_high = 0;
     long long global_ans = 0;
 #pragma omp parallel num_threads(thread_count) reduction(+: global_ans)
     {
-        double start_time = get_wall_time();
-        double current_time;
+     //   double start_time = get_wall_time();
+     //   double current_time;
         VertexSet* vertex_set = new VertexSet[schedule.get_total_prefix_num()];
         VertexSet subtraction_set;
         VertexSet tmp_set;
@@ -249,7 +250,7 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
             get_edge_index(vertex, l, r);
             for (int prefix_id = schedule.get_last(0); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
             {
-                vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], (int)r - l, prefix_id);
+                vertex_set[prefix_id].build_vertex_set(intersection_times_low, intersection_times_high, schedule, vertex_set, &edge[l], (int)r - l, prefix_id);
             }
             //subtraction_set.insert_ans_sort(vertex);
             subtraction_set.push_back(vertex);
@@ -260,8 +261,8 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
                 pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, 1, clique);
             subtraction_set.pop_back();
         }
-        double end_time = get_wall_time();
-        printf("my thread time %d %.6lf\n", omp_get_thread_num(), end_time - start_time);
+        //double end_time = get_wall_time();
+        //printf("my thread time %d %.6lf\n", omp_get_thread_num(), end_time - start_time);
         delete[] vertex_set;
         // TODO : Computing multiplicty for a pattern
         global_ans += local_ans;
@@ -354,7 +355,7 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
 
                     for(int i = 1; i < cur_graph[cur_graph_rank].size(); ++i) {
                         int id = loop_set_prefix_ids[cur_graph[cur_graph_rank][i]];
-                        tmp_set.intersection_with(vertex_set[id]);
+                        tmp_set.intersection_with(vertex_set[id], intersection_times_low, intersection_times_high);
                     }
                     val = val * VertexSet::unorderd_subtraction_size(tmp_set, subtraction_set);
                 }
@@ -404,7 +405,7 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
         bool is_zero = false;
         for (int prefix_id = schedule.get_last(depth); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
         {
-            vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, &edge[l], (int)r - l, prefix_id, vertex);
+            vertex_set[prefix_id].build_vertex_set(intersection_times_low, intersection_times_high, schedule, vertex_set, &edge[l], (int)r - l, prefix_id, vertex);
             if( vertex_set[prefix_id].get_size() == 0) {
                 is_zero = true;
                 break;
@@ -442,7 +443,7 @@ long long Graph::pattern_matching_mpi(const Schedule& schedule, int thread_count
             auto match_start_vertex = [&](int vertex, int *data, int size) {
                 for (int prefix_id = schedule.get_last(0); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
                 {
-                    vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, data, size, prefix_id);
+                    vertex_set[prefix_id].build_vertex_set(intersection_times_low, intersection_times_high, schedule, vertex_set, data, size, prefix_id);
                 }
                 //subtraction_set.insert_ans_sort(vertex);
                 subtraction_set.push_back(vertex);
@@ -522,7 +523,7 @@ void Graph::pattern_matching_aggressive_func_mpi(const Schedule& schedule, Verte
         bool is_zero = false;
         for (int prefix_id = schedule.get_last(depth); prefix_id != -1; prefix_id = schedule.get_next(prefix_id))
         {
-            vertex_set[prefix_id].build_vertex_set(schedule, vertex_set, data, size, prefix_id, vertex);
+            vertex_set[prefix_id].build_vertex_set(intersection_times_low, intersection_times_high, schedule, vertex_set, data, size, prefix_id, vertex);
             if( vertex_set[prefix_id].get_size() == 0) {
                 is_zero = true;
                 break;

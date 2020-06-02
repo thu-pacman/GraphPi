@@ -41,12 +41,15 @@ VertexSet::~VertexSet()
         delete[] data;
 }
 
-void VertexSet::intersection(const VertexSet& set0, const VertexSet& set1, int min_vertex, bool clique)
+void VertexSet::intersection(long long & intersection_times_low, long long & intersection_times_high, const VertexSet& set0, const VertexSet& set1, int min_vertex, bool clique)
 {
     int i = 0;
     int j = 0;
     int size0 = set0.get_size();
     int size1 = set1.get_size();
+
+    long_add(intersection_times_low, intersection_times_high, size0);
+    long_add(intersection_times_low, intersection_times_high, size0);
 
     // TODO : Try more kinds of calculation.
     // Like
@@ -102,12 +105,15 @@ void VertexSet::intersection(const VertexSet& set0, const VertexSet& set1, int m
         }
 }
 
-void VertexSet::intersection_with(const VertexSet& set1) {
+void VertexSet::intersection_with(const VertexSet& set1, long long & intersection_times_low, long long & intersection_times_high) {
     const VertexSet& set0 = *this;
     int i = 0;
     int j = 0;
     int size0 = set0.get_size();
     int size1 = set1.get_size();
+
+    long_add(intersection_times_low, intersection_times_high, size0);
+    long_add(intersection_times_low, intersection_times_high, size1);
 
     // TODO : Try more kinds of calculation.
     // Like
@@ -136,7 +142,7 @@ void VertexSet::intersection_with(const VertexSet& set1) {
     }
 }
 
-void VertexSet::build_vertex_set(const Schedule& schedule, const VertexSet* vertex_set, int* input_data, int input_size, int prefix_id, int min_vertex, bool clique)
+void VertexSet::build_vertex_set(long long & intersection_times_low, long long & intersection_times_high, const Schedule& schedule, const VertexSet* vertex_set, int* input_data, int input_size, int prefix_id, int min_vertex, bool clique)
 {
     int father_id = schedule.get_father_prefix_id(prefix_id);
     if (father_id == -1)
@@ -146,7 +152,7 @@ void VertexSet::build_vertex_set(const Schedule& schedule, const VertexSet* vert
         init();
         VertexSet tmp_vset;
         tmp_vset.init(input_size, input_data);
-        intersection(vertex_set[father_id], tmp_vset, min_vertex, clique);
+        intersection(intersection_times_low, intersection_times_high, vertex_set[father_id], tmp_vset, min_vertex, clique);
     }
 }
 

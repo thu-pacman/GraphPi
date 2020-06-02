@@ -1,5 +1,8 @@
 #pragma once
 #include "schedule.h"
+
+void long_add(long long &low, long long &high, int num);
+
 class VertexSet
 {
 public:
@@ -10,8 +13,8 @@ public:
     void init(int input_size, int* input_data);
     void copy(int input_size, int* input_data);
     ~VertexSet();
-    void intersection(const VertexSet& set0, const VertexSet& set1, int min_vertex = -1, bool clique = false);
-    void intersection_with(const VertexSet& set1);
+    void intersection(long long & intersection_times_low, long long & intersection_times_high, const VertexSet& set0, const VertexSet& set1, int min_vertex = -1, bool clique = false);
+    void intersection_with(const VertexSet& set1, long long & intersection_times_low, long long & intersection_times_high);
     //set1 is unordered
     static int unorderd_subtraction_size(const VertexSet& set0, const VertexSet& set1, int size_after_restrict = -1);
     void insert_ans_sort(int val);
@@ -24,7 +27,7 @@ public:
     inline int get_last() const { return data[size - 1];}
     bool has_data(int val);
     static int max_intersection_size;
-    void build_vertex_set(const Schedule& schedule, const VertexSet* vertex_set, int* input_data, int input_size, int prefix_id, int min_vertex = -1, bool clique = false);
+    void build_vertex_set(long long & intersection_times_low, long long & intersection_times_high, const Schedule& schedule, const VertexSet* vertex_set, int* input_data, int input_size, int prefix_id, int min_vertex = -1, bool clique = false);
 private:
     int* data;
     int size;

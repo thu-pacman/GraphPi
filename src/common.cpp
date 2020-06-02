@@ -85,3 +85,13 @@ unsigned int read_unsigned_int() {
     while( ch >= '0' && ch <= '9') x = x* 10 + ch -'0', ch = getchar();
     return x;
 }
+
+void long_add(long long &low, long long &high, int num) {
+    if( low + num < 0) {
+        low = 0;
+        ++high;
+    }
+    else {
+        low += num;
+    }
+}

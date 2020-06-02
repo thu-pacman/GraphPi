@@ -15,14 +15,16 @@ void test_pattern(Graph* g, const Pattern &pattern, int performance_modeling_typ
     double t1,t2;
     
     bool is_pattern_valid;
-    Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, restricts_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt, g->tri_cnt);
+    Schedule schedule(pattern, is_pattern_valid, 0, restricts_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt, g->tri_cnt);
     assert(is_pattern_valid);
 
     t1 = get_wall_time();
     long long ans = g->pattern_matching(schedule, thread_num);
     t2 = get_wall_time();
 
-    printf("ans %lld,%.6lf\n", ans, t2 - t1);
+    printf("ans %lld\n", ans);
+    printf("time %.6lf\n", t2 - t1);
+    printf("intersection %lld, %lld", g->intersection_times_low, g->intersection_times_high);
     schedule.print_schedule();
     const auto& pairs = schedule.restrict_pair;
     printf("%d ",pairs.size());
