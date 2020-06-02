@@ -27,7 +27,7 @@ void test_pattern(Graph* g, Pattern &pattern) {
     bool use_in_exclusion_optimize;
 
     t1 = get_wall_time();
-    Schedule schedule_our(pattern, is_pattern_valid, 1, 1, false, g->v_cnt, g->e_cnt, g->tri_cnt);
+    Schedule schedule_our(pattern, is_pattern_valid, 1, 1, true, g->v_cnt, g->e_cnt, g->tri_cnt);
     assert(is_pattern_valid);
     t2 = get_wall_time();
 
@@ -90,13 +90,20 @@ void test_pattern(Graph* g, Pattern &pattern) {
         ++work_cnt;
         if( work_cnt % node_cnt != my_rank) continue;
 
+        for(int i = 0; i < size; ++i,puts(""))
+            for(int j = 0; j < size; ++j)
+                printf("%d",cur_adj_mat[INDEX(i,j,size)]);
+        puts("");
+
         t1 = get_wall_time();
         long long ans2 = g->pattern_matching(schedule, thread_num);
         t2 = get_wall_time();
 
-        assert(ans == ans2);
-        printf("time : %.6lf\n", t2 - t1);
-        
+        if( ans2 > 0 ) {
+            assert(ans == ans2);
+            printf("time : %.6lf\n", t2 - t1);
+        }
+        else printf("timeout\n");
         fflush(stdout);
     } while( std::next_permutation(rank, rank + size));
     
