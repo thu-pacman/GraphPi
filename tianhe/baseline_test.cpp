@@ -25,6 +25,7 @@ void test_pattern(Graph* g, const Pattern &pattern, int performance_modeling_typ
     printf("ans %lld\n", ans);
     printf("time %.6lf\n", t2 - t1);
     printf("intersection %lld, %lld", g->intersection_times_low, g->intersection_times_high);
+    printf("depth_cnt %lld %lld %lld\n", g->dep1_cnt, g->dep2_cnt, g->dep3_cnt);
     schedule.print_schedule();
     const auto& pairs = schedule.restrict_pair;
     printf("%d ",pairs.size());

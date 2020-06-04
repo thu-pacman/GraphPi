@@ -48,8 +48,8 @@ void VertexSet::intersection(long long & intersection_times_low, long long & int
     int size0 = set0.get_size();
     int size1 = set1.get_size();
 
-    long_add(intersection_times_low, intersection_times_high, size0);
-    long_add(intersection_times_low, intersection_times_high, size0);
+//    long_add(intersection_times_low, intersection_times_high, size0);
+//    long_add(intersection_times_low, intersection_times_high, size0);
 
     // TODO : Try more kinds of calculation.
     // Like
@@ -103,6 +103,8 @@ void VertexSet::intersection(long long & intersection_times_low, long long & int
                 ++j;
             }
         }
+    long_add(intersection_times_low, intersection_times_high, i);
+    long_add(intersection_times_low, intersection_times_high, j);
 }
 
 void VertexSet::intersection_with(const VertexSet& set1, long long & intersection_times_low, long long & intersection_times_high) {
@@ -112,8 +114,8 @@ void VertexSet::intersection_with(const VertexSet& set1, long long & intersectio
     int size0 = set0.get_size();
     int size1 = set1.get_size();
 
-    long_add(intersection_times_low, intersection_times_high, size0);
-    long_add(intersection_times_low, intersection_times_high, size1);
+//    long_add(intersection_times_low, intersection_times_high, size0);
+//    long_add(intersection_times_low, intersection_times_high, size1);
 
     // TODO : Try more kinds of calculation.
     // Like
@@ -140,6 +142,8 @@ void VertexSet::intersection_with(const VertexSet& set1, long long & intersectio
             ++j;
         }
     }
+    long_add(intersection_times_low, intersection_times_high, i);
+    long_add(intersection_times_low, intersection_times_high, j);
 }
 
 void VertexSet::build_vertex_set(long long & intersection_times_low, long long & intersection_times_high, const Schedule& schedule, const VertexSet* vertex_set, int* input_data, int input_size, int prefix_id, int min_vertex, bool clique)

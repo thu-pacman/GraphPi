@@ -32,6 +32,9 @@ public:
 
     long long intersection_times_low;
     long long intersection_times_high;
+    long long dep1_cnt;
+    long long dep2_cnt;
+    long long dep3_cnt;
 
     //single thread triangle counting
     long long triangle_counting();
