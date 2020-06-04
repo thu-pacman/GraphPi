@@ -103,8 +103,11 @@ void VertexSet::intersection(long long & intersection_times_low, long long & int
                 ++j;
             }
         }
-    long_add(intersection_times_low, intersection_times_high, i);
-    long_add(intersection_times_low, intersection_times_high, j);
+    #pragma omp critical 
+    {
+        long_add(intersection_times_low, intersection_times_high, i);
+        long_add(intersection_times_low, intersection_times_high, j);
+    }
 }
 
 void VertexSet::intersection_with(const VertexSet& set1, long long & intersection_times_low, long long & intersection_times_high) {
@@ -142,8 +145,11 @@ void VertexSet::intersection_with(const VertexSet& set1, long long & intersectio
             ++j;
         }
     }
-    long_add(intersection_times_low, intersection_times_high, i);
-    long_add(intersection_times_low, intersection_times_high, j);
+    #pragma omp critical 
+    {
+        long_add(intersection_times_low, intersection_times_high, i);
+        long_add(intersection_times_low, intersection_times_high, j);
+    }
 }
 
 void VertexSet::build_vertex_set(long long & intersection_times_low, long long & intersection_times_high, const Schedule& schedule, const VertexSet* vertex_set, int* input_data, int input_size, int prefix_id, int min_vertex, bool clique)

@@ -234,7 +234,7 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
     intersection_times_low = intersection_times_high = 0;
     dep1_cnt = dep2_cnt = dep3_cnt = 0;
     long long global_ans = 0;
-#pragma omp parallel num_threads(thread_count) reduction(+: global_ans,dep1_cnt, dep2_cnt, dep3_cnt, intersection_times_low, intersection_times_high)
+#pragma omp parallel num_threads(thread_count) reduction(+: global_ans)
     {
      //   double start_time = get_wall_time();
      //   double current_time;
@@ -389,9 +389,12 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
         return;
     }
 
-    if( depth == 1) ++dep1_cnt;
-    if( depth == 2) ++dep2_cnt;
-    if( depth == 3) ++dep3_cnt;
+    #pragma omp critical
+    {
+        if( depth == 1) ++dep1_cnt;
+        if( depth == 2) ++dep2_cnt;
+        if( depth == 3) ++dep3_cnt;
+    }
     // TODO : min_vertex is also a loop invariant
     int min_vertex = v_cnt;
     for (int i = schedule.get_restrict_last(depth); i != -1; i = schedule.get_restrict_next(i))
