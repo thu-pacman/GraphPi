@@ -4,9 +4,9 @@ GraphPi is being refactored. The official version will be released in the final 
 
 
 
-## How to run on sigle machine
+## How to run on a single machine
 
-In this section, you will learn how to run GraphPi on single machine with multi threads.(using OpenMP)
+In this section, you will learn how to run GraphPi on a single machine with multi threads (using OpenMP).
 
 
 
@@ -14,11 +14,11 @@ In this section, you will learn how to run GraphPi on single machine with multi 
 
 The class `DataLoader` is used to load the dataset.  And the dataset will store in class `Graph` .
 
-The format of the dataset may be a little different from its download version. The first line should contain two integer, the number of vertices and the number of edges respectively. From the second line, each line contains two integer `x`and ` y`,representing an edge `(x,y)` in the graph. Since GraphPi's performan model needs the number of triangles in the dataset, a constant variable named "$dataset_tri_cnt" is needed in `/include/dataloader.h`(See code for more detail).
+The format of the dataset may be a little different from its download version. The first line should contain two integers: the number of vertices and the number of edges respectively. From the second line, each line contains two integers `x`and ` y`,representing a directed edge `(x,y)` in the graph. Since GraphPi's performance model needs the number of triangles in the dataset, a constant variable named `dataset_tri_cnt` is needed in `include/dataloader.h`(See our code for more detail).
 
-We have already prepared these clasical datasets for GraphPi system: `Patents` ,`Orkut` ,`LiveJournal`, `MiCo`, `Twitter`, `CiteSeer` and `WikiVote` . We only upload `WikiVote` dataset to github as an example, because some datasets can be very large.
+We have already prepared these classical datasets for GraphPi: `Patents` ,`Orkut` ,`LiveJournal`, `MiCo`, `Twitter`, `CiteSeer` and `WikiVote` . We only upload `WikiVote` dataset to github as an example, because some datasets are very large.
 
-When the dataset is prepared, we can load the dataset easily. First,  you need to define a pointer of graph and a dataloader.
+When the dataset is prepared, we can load the dataset easily. First,  you need to define a pointer of a graph and a dataloader.
 
 ```cpp
 Graph *g;
@@ -32,20 +32,20 @@ const std::string type_str = "Wiki-Vote";
 const std::string path = "./datasets/wiki-vote_input"
 ```
 
-In `/include/common.h`, we provide many function to make your coding more easy. Using `GetDataType` to transform `std::string` to `DataType`.
+In `include/common.h`, we provide many functions to make your coding more easy. Using `GetDataType` to transform `std::string` to `DataType`.
 
 ```cpp
 DataType my_type;
 GetDataType(my_type, type_str);
 ```
 
-Now you can load the dataset using the function `load_data()`. If it failed to load the dataset, this function will return `false`.
+Now you can load the dataset using the function `load_data()`. If it failed to load the dataset, this function returns `false`.
 
 ```cpp
 assert(D.load_data(g,my_type,path.c_str()));
 ```
 
-After steps above, you have a graph `g` which containing Wiki-Vote dataset.
+After steps above, you have a graph `g` which contains the Wiki-Vote dataset.
 
 ### Step 1 : Define the pattern
 
@@ -68,7 +68,7 @@ p.add_edge(3,0);
 // 3 -- 2
 ```
 
-Since the rectangle was used frequently, we provide an easier way for you to load the rectangle. 
+Since the rectangle pattern is used frequently, we provide an easier way for you to load the rectangle. 
 
 ```
 Pattern p(PatternType::Rectangle);
@@ -78,13 +78,13 @@ And the third way is a little bit brute-force, you can provide adjoint matrix as
 
 ```cpp
 int size = 4;
-char adj_mat[17] = "0101101001011010"; // the vertex 0 has neighbor 1 and 3, so the first four character "0101" means 0 have edges to 1 and 3 but not have edge to 0 or 2.
+char adj_mat[17] = "0101101001011010"; // the vertex 0 has neighbor 1 and 3, so the first four character "0101" means 0 have edges to 1 and 3 but not have an edge to 0 or 2.
 Pattern p(size, adj_mat);
 ```
 
-###Step 2 : Define the schedule
+### Step 2 : Define the schedule
 
-Three things you need to decide in this step : 1) performance modeling type 2) restricts type 3) the use of inclusion-exclusion optimize.
+Three things you need to decide in this step : 1) performance modeling type 2) restrictions type 3) the use of inclusion-exclusion optimization.
 
 In class `Schedule` you can see the constructor function :
 
@@ -92,17 +92,17 @@ In class `Schedule` you can see the constructor function :
  Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, int restricts_type, bool use_in_exclusion_optimize, int v_cnt, unsigned int e_cnt, long long tri_cnt);
 ```
 
-For `performance_modeling_type`, 0 means not use performance modeling; 1 means using GraphPi's.
+For `performance_modeling_type`, 0 means not t use performance modeling; 1 means to use GraphPi's performance modeling.
 
-For `restricts_type`, 0 means not use restricts; 1 means using GraphPi's.
+For `restricts_type`, 0 means not to use restricts; 1 means using GraphPi's restriction generator.
 
-`v_cnt` means number of vertices, `e_cnt` means number of edges, `tri_cnt` means numnber of triangles.
+`v_cnt`, `e_cnt` and `tri_cnt`  mean the number of vertices, edges and triangles of the input graph respectively.
 
 And you need to use variable `pattern` defined in the step 1.
 
 
 
-So if we want to use GraphPi's performance model and restricts without inclusion-exclusion optimize, you should run like this :
+So if we want to use GraphPi's performance model and restrictions without inclusion-exclusion optimization, you should run like this :
 
 ```cpp
 int performance_modeling_type = 1;
@@ -116,21 +116,21 @@ assert(is_pattern_valid);
 
 
 
-###Step 3 : Run pattern matching
+### Step 3 : Run pattern matching
 
-GraphPi is based on Openmp to enable multi-threads, so you need to decide how many threads you will use in the process of pattern matching. In our experiment, we use 24 threads.
+GraphPi is based on OpenMP to enable multi-threads, so you need to decide how many threads to use in the process of pattern matching. In our experiment, we use 24 threads.
 
 ```
 int thread_num = 24;
 ```
 
-Now, we can run the member function `pattern_matching` of class Graph.
+Now, we can run the member function `pattern_matching` of the class `Graph`.
 
 ```
 long long ans = g->pattern_matching(schedule, thread_num);
 ```
 
-And the result is store in variable `ans`（short for answer).
+And the result is stored in the variable `ans`（short for answer).
 
 
 
@@ -138,4 +138,4 @@ And the result is store in variable `ans`（short for answer).
 
 If you are still confused, you can see `tianhe/baseline_test.cpp` as an example. This program is following steps above.
 
-Many function are implemented for debug and experiment, you can just ignored them.
+Many functions are implemented for debugging and experiments, you can just ignore them.
