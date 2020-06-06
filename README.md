@@ -139,3 +139,10 @@ And the result is stored in the variable `ans`（short for answer).
 If you are still confused, you can see `tianhe/baseline_test.cpp` as an example. This program is following steps above.
 
 Many functions are implemented for debugging and experiments, you can just ignore them.
+
+## How to run the distributed version
+GraphPi uses MPI to implement the distributed version.
+
+You can see `src/run_mpi_trivial.cpp` as an example.
+
+The parameters used in the distributed version are the same as those used in the single node version. You can choose to pass parameters through the command line or modify them directly in `src/run_mpi_trivial.cpp`.
