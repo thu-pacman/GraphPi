@@ -15,3 +15,6 @@ TARGET_LINK_LIBRARIES(schedules_test graph_mining)
 
 ADD_EXECUTABLE(code_generator code_generator.cpp)
 TARGET_LINK_LIBRARIES(code_generator graph_mining)
+
+ADD_EXECUTABLE(unfold_test unfold_test.cpp)
+TARGET_LINK_LIBRARIES(unfold_test graph_mining)

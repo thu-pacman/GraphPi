@@ -38,6 +38,9 @@ public:
     //general pattern matching algorithm with multi thread
     long long pattern_matching(const Schedule& schedule, int thread_count, bool clique = false);
 
+    //this function will be defined at code generation
+    long long unfold_pattern_matching(const Schedule& schedule, int thread_count, bool clique = false);
+
     //general pattern matching algorithm with multi thread ans multi process
     long long pattern_matching_mpi(const Schedule& schedule, int thread_count, bool clique = false);
 private:
@@ -49,5 +52,8 @@ private:
     void pattern_matching_func(const Schedule& schedule, VertexSet* vertex_set, VertexSet& subtraction_set, long long& local_ans, int depth, bool clique = false);
 
     void pattern_matching_aggressive_func(const Schedule& schedule, VertexSet* vertex_set, VertexSet& subtraction_set, VertexSet& tmp_set, long long& local_ans, int depth);
+
+    //this function will be defined at code generation
+    void unfold_pattern_matching_aggressive_func(const Schedule& schedule, VertexSet* vertex_set, VertexSet& subtraction_set, VertexSet& tmp_set, long long& local_ans, int depth);
 
 };
