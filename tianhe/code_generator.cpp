@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <fstream>
 
-void print_block(std::ostream &out, std::vector<std::string> block, int indent) {
+void print_block(std::ostream &out, std::vector<std::string> block, int indent, bool return_flag = false) {
     using namespace std;
     int mi = 0x7fffffff;
     for (string i : block) {
@@ -26,7 +26,13 @@ void print_block(std::ostream &out, std::vector<std::string> block, int indent) 
         }
         if (i.find("Graphmpi") != string::npos) out << "//";
         for (int j = 0; j < indent; j++) out.put(' ');
-        out << i.substr(mi) << endl;
+        if (return_flag && i.find("return") != string::npos) {
+            for (int j = mi; j < int(i.size()) && i[j] == ' '; j++) {
+                out.put(' ');
+            }
+            out << "break;\n";
+        }
+        else out << i.substr(mi) << endl;
     }
 }
 
@@ -97,18 +103,19 @@ void code_gen(Graph* g, const Pattern &pattern, int performance_modeling_type, i
     indent += 4;
     for (int depth = 1; depth < max_depth; depth++) {
         if (depth > 1) print_str(cout, "const int depth = " + to_string(depth) + ";", indent);
-        print_block(cout, before_re, indent);
+        print_block(cout, before_re, indent, depth > 1);
         indent += 4;
-        print_str(cout, "{", indent);
+        print_str(cout, "do {", indent);
         indent += 4;
     }
     print_str(cout, "const int depth = " + to_string(max_depth) + ";", indent);
-    print_block(cout, finale, indent);
+    print_block(cout, blocks[0], indent, max_depth > 1);
+    print_block(cout, finale, indent, max_depth > 1);
     for (int depth = max_depth - 1; depth; depth--) {
         indent -= 4;
-        print_str(cout, "}", indent);
+        print_str(cout, "} while(false);", indent);
         indent -= 4;
-        print_block(cout, after_re, indent);
+        print_block(cout, after_re, indent, depth > 1);
     }
     indent -= 4;
     print_str(cout, "}", indent);
