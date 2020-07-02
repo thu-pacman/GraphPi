@@ -60,7 +60,7 @@ int main(int argc,char *argv[]) {
     fflush(stdout);
 
     Pattern p(size, adj_mat);
-    test_pattern(g, p, test_type, test_type);
+    test_pattern(g, p, test_type, test_type, argc > 6 && argv[6][0] == '1');
     
     delete g;
 }
