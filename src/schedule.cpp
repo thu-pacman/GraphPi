@@ -208,25 +208,6 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
             in_exclusion_optimize_num = 0;
     }
 
-    if( use_in_exclusion_optimize) {
-        std::vector<int> I;
-        I.clear();
-        for(int i = 0; i < size; ++i) I.push_back(i);
-        in_exclusion_optimize_num = get_vec_optimize_num(I);
-        if( in_exclusion_optimize_num <= 1) {
-            printf("Can not use in_exclusion_optimize with this schedule\n");
-            in_exclusion_optimize_num = 0;
-        }
-        else {
-            printf("use in_exclusion_optimize with size %d\n", in_exclusion_optimize_num);
-            init_in_exclusion_optimize();
-        }
-    }
-    else {
-            in_exclusion_optimize_num = 0;
-    }
-
-
     // The I-th loop consists of at most the intersection of i-1 VertexSet.
     // So the max number of prefix = 0 + 1 + ... + size-1 = size * (size-1) / 2
     int max_prefix_num = size * (size - 1) / 2;
@@ -1451,7 +1432,7 @@ void Schedule::restricts_generate(const int* cur_adj_mat, std::vector< std::vect
     int size = schedule.get_size();
     Graph* complete;
     DataLoader* D = new DataLoader();
-    assert(D->load_data(complete, size + 1));
+    assert(D->load_complete(complete, size + 1));
     long long ans = complete->pattern_matching( schedule, 1) / schedule.get_multiplicity();
     int thread_num = 1;
     for(int i = 0; i < restricts.size(); ) {

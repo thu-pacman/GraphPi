@@ -85,3 +85,13 @@ unsigned int read_unsigned_int() {
     while( ch >= '0' && ch <= '9') x = x* 10 + ch -'0', ch = getchar();
     return x;
 }
+
+long long in_exclusion_optimize_redundancy(Schedule &schedule) {
+    Graph* complete;
+    DataLoader* D = new DataLoader();
+    assert(D->load_complete(complete, schedule.get_size()));
+    delete D;
+    long long ans = complete->pattern_matching( schedule, 1);
+    delete complete;
+    return ans;
+}

@@ -187,7 +187,7 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
     return true;
 }
 
-bool DataLoader::load_data(Graph* &g, int clique_size) {
+bool DataLoader::load_complete(Graph* &g, int clique_size) {
     g = new Graph();
 
     g->v_cnt = clique_size;

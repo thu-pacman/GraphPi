@@ -4,6 +4,7 @@
 #include <string>
 #include "pattern.h"
 #include "dataloader.h"
+#include "schedule.h"
 
 double get_wall_time(); 
 
@@ -16,3 +17,5 @@ void GetDataType(DataType &type, const std::string str);
 int read_int();
 
 unsigned int read_unsigned_int();
+
+long long in_exclusion_optimize_redundancy(Schedule &schedule);
