@@ -248,6 +248,8 @@ Schedule::Schedule(const Pattern& pattern, bool &is_pattern_valid, int performan
 
     build_loop_invariant();
     if( restricts_type != 0) add_restrict(best_pairs);
+    
+    set_in_exclusion_optimize_redundancy();
 }
 
 Schedule::Schedule(const int* _adj_mat, int _size)
@@ -296,6 +298,8 @@ Schedule::Schedule(const int* _adj_mat, int _size)
     }
 
     build_loop_invariant();
+
+    set_in_exclusion_optimize_redundancy();
 }
 
 Schedule::~Schedule()
@@ -1737,4 +1741,24 @@ int Schedule::get_in_exclusion_optimize_num_when_not_optimize() {
     std::vector<int> I;
     for(int i = 0; i < size; ++i) I.push_back(i);
     return get_vec_optimize_num(I);
+}
+
+void Schedule::set_in_exclusion_optimize_redundancy() {
+    int tmp = get_in_exclusion_optimize_num();
+    if(tmp <= 1) {
+        in_exclusion_optimize_redundancy = 1;
+    }
+    else {
+        Graph* complete;
+        DataLoader* D = new DataLoader();
+        assert(D->load_complete(complete, get_size()));
+        delete D;
+        in_exclusion_optimize_redundancy = 1;
+        long long ans = complete->pattern_matching( *this, 1);
+        set_in_exclusion_optimize_num(0);
+        long long true_ans = complete->pattern_matching( *this, 1);
+        set_in_exclusion_optimize_num(tmp);
+        delete complete;
+        in_exclusion_optimize_redundancy = ans / true_ans;
+    }
 }

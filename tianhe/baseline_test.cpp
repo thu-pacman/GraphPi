@@ -22,8 +22,6 @@ void test_pattern(Graph* g, const Pattern &pattern, int performance_modeling_typ
     long long ans = g->pattern_matching(schedule, thread_num);
     t2 = get_wall_time();
 
-    ans /= in_exclusion_optimize_redundancy(schedule);
-
     printf("ans %lld\n", ans);
     printf("time %.6lf\n", t2 - t1);
     schedule.print_schedule();

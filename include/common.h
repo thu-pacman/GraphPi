@@ -17,5 +17,3 @@ void GetDataType(DataType &type, const std::string str);
 int read_int();
 
 unsigned int read_unsigned_int();
-
-long long in_exclusion_optimize_redundancy(Schedule &schedule);
