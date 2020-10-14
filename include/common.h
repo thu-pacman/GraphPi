@@ -4,6 +4,7 @@
 #include <string>
 #include "pattern.h"
 #include "dataloader.h"
+#include "schedule.h"
 
 double get_wall_time(); 
 

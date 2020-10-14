@@ -27,12 +27,14 @@ public:
     inline int get_last(int i) const { return last[i];}
     inline int get_next(int i) const { return next[i];}
     inline int get_in_exclusion_optimize_num() const { return in_exclusion_optimize_num;}
+    inline void set_in_exclusion_optimize_num(int num) { in_exclusion_optimize_num = num; }
     int get_in_exclusion_optimize_num_when_not_optimize();
     void add_restrict(const std::vector< std::pair<int, int> >& restricts);
     inline int get_total_restrict_num() const { return total_restrict_num;}
     inline int get_restrict_last(int i) const { return restrict_last[i];}
     inline int get_restrict_next(int i) const { return restrict_next[i];}
     inline int get_restrict_index(int i) const { return restrict_index[i];}
+    inline long long get_in_exclusion_optimize_redundancy() const { return in_exclusion_optimize_redundancy; }
     int get_max_degree() const;
     int get_multiplicity() const;
     void aggressive_optimize(std::vector< std::pair<int,int> >& ordered_pairs) const;
@@ -69,6 +71,8 @@ private:
     int total_restrict_num;
     int in_exclusion_optimize_num;
 
+    long long in_exclusion_optimize_redundancy;
+
     void build_loop_invariant();
     int find_father_prefix(int data_size, const int* data);
     void get_full_permutation(std::vector< std::vector<int> >& vec, bool use[], std::vector<int> tmp_vec, int depth) const;
@@ -88,4 +92,6 @@ private:
     int get_vec_optimize_num(const std::vector<int> &vec);
 
     void remove_invalid_permutation(std::vector< std::vector<int> > &candidate_permutations);
+
+    void set_in_exclusion_optimize_redundancy();
 };
