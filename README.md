@@ -6,7 +6,7 @@ GraphPi is being refactored. The official version will be released in the final 
 
 ## How to run on a single machine
 
-In this section, you will learn how to run GraphPi on a single machine with multi threads (using OpenMP).
+In this section, you will learn how to run GraphPi on a single machine with multi-threads (using OpenMP).
 
 
 
