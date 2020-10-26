@@ -12,11 +12,11 @@ In this section, you will learn how to run GraphPi on a single machine with mult
 
 ### Step 0 : Load the dataset
 
-The class `DataLoader` is used to load the dataset.  And the dataset will store in class `Graph` .
+The class `DataLoader` is used to load the dataset(i.e., data graph).  And the dataset is stored in class `Graph` .
 
-The format of the dataset may be a little different from its download version. The first line should contain two integers: the number of vertices and the number of edges respectively. From the second line, each line contains two integers `x`and ` y`,representing a directed edge `(x,y)` in the graph. Since GraphPi's performance model needs the number of triangles in the dataset, a constant variable named `dataset_tri_cnt` is needed in `include/dataloader.h`(See our code for more detail).
+The format of the dataset may be a little different from its download version. The first line should contain two integers: the number of vertices and the number of edges respectively. From the second line, each line contains two integers `x`and ` y`, representing an undirected edge `(x,y)` in the graph. The wiki-vote dataset has been placed at GraphPi/dataset/wiki-vote_input as an example.
 
-We have already prepared these classical datasets for GraphPi: `Patents` ,`Orkut` ,`LiveJournal`, `MiCo`, `Twitter`, `CiteSeer` and `WikiVote` . We only upload `WikiVote` dataset to github as an example, because some datasets are very large.
+Since GraphPi's performance model needs the number of triangles of the dataset, if you want to use a new dataset, you need to add a new `DataType` and a corresponding constant variable named `dataset_tri_cnt` representing the number of triangles in `include/dataloader.h` (see our code for more detail). And we have already prepared these classical datasets for GraphPi in `include/dataloader.h`: `Patents` ,`Orkut` ,`LiveJournal`, `MiCo`, `Twitter`, `CiteSeer` and `WikiVote`.
 
 When the dataset is prepared, we can load the dataset easily. First,  you need to define a pointer of a graph and a dataloader.
 
@@ -45,15 +45,13 @@ Now you can load the dataset using the function `load_data()`. If it failed to l
 assert(D.load_data(g,my_type,path.c_str()));
 ```
 
-After steps above, you have a graph `g` which contains the Wiki-Vote dataset.
+After steps above, you have a graph `g` which contains the dataset.
 
 ### Step 1 : Define the pattern
 
-The class `Pattern` is used to store the pattern. There are several ways to define a pattern.
+The class `Pattern` is used to store a pattern. Taking Rectangle as an example, three ways are enabled to define the pattern.
 
-Taking rectangle as an example, three ways are enabled to define the pattern.
-
-The first one is adding edges yourself.
+The first one is adding each edge of a pattern one by one.
 
 ```
 int size = 4;
@@ -62,19 +60,19 @@ p.add_edge(0,1);
 p.add_edge(1,2);
 p.add_edge(2,3);
 p.add_edge(3,0);
-// the pattern rectangle is like :
+// Rectangle is like :
 // 0 -- 1
 // |    |
 // 3 -- 2
 ```
 
-Since the rectangle pattern is used frequently, we provide an easier way for you to load the rectangle. 
+Since the Rectangle pattern is used frequently, we provide an easier way for you to load this pattern. 
 
 ```
 Pattern p(PatternType::Rectangle);
 ```
 
-And the third way is a little bit brute-force, you can provide adjoint matrix as a char array.
+The third way is providing an adjacency matrix in an array.
 
 ```cpp
 int size = 4;
@@ -84,30 +82,30 @@ Pattern p(size, adj_mat);
 
 ### Step 2 : Define the schedule
 
-Three things you need to decide in this step : 1) performance modeling type 2) restrictions type 3) the use of inclusion-exclusion optimization.
+Three things you need to decide in this step : 1) performance modeling type 2) restrictions type 3) use inclusion-exclusion optimization or not.
 
-In class `Schedule` you can see the constructor function :
+In class `Schedule`, you can see the constructor function :
 
 ```cpp
  Schedule(const Pattern& pattern, bool& is_pattern_valid, int performance_modeling_type, int restricts_type, bool use_in_exclusion_optimize, int v_cnt, unsigned int e_cnt, long long tri_cnt);
 ```
 
-For `performance_modeling_type`, 0 means not t use performance modeling; 1 means to use GraphPi's performance modeling.
+For `performance_modeling_type`, 0 means not to use any performance modeling; 1 means to use GraphPi's performance modeling.
 
-For `restricts_type`, 0 means not to use restricts; 1 means using GraphPi's restriction generator.
+For `restricts_type`, 0 means to use not restrictions; 1 means using GraphPi's restriction generator.
 
-`v_cnt`, `e_cnt` and `tri_cnt`  mean the number of vertices, edges and triangles of the input graph respectively.
+`v_cnt`, `e_cnt` and `tri_cnt`  mean the numbers of vertices, edges and triangles of the dataset respectively.
 
 And you need to use variable `pattern` defined in the step 1.
 
 
 
-So if we want to use GraphPi's performance model and restrictions without inclusion-exclusion optimization, you should run like this :
+So, if we want to use GraphPi's performance model and restrictions with inclusion-exclusion optimization, you should run like this :
 
 ```cpp
 int performance_modeling_type = 1;
 int restricts_type = 1;
-bool use_in_exclusion_optimize = false;
+bool use_in_exclusion_optimize = true;
 bool is_pattern_valid;
 
 Schedule schedule(pattern, is_pattern_valid, performance_modeling_type, restricts_type, use_in_exclusion_optimize, g->v_cnt, g->e_cnt, g->tri_cnt);
@@ -118,7 +116,7 @@ assert(is_pattern_valid);
 
 ### Step 3 : Run pattern matching
 
-GraphPi is based on OpenMP to enable multi-threads, so you need to decide how many threads to use in the process of pattern matching. In our experiment, we use 24 threads.
+GraphPi is based on OpenMP to enable multi-threads, so you need to decide how many threads to use in the process of pattern matching. In our experiment, we use 24 threads since each node has 2 12-core processors.
 
 ```
 int thread_num = 24;
@@ -130,7 +128,7 @@ Now, we can run the member function `pattern_matching` of the class `Graph`.
 long long ans = g->pattern_matching(schedule, thread_num);
 ```
 
-And the result is stored in the variable `ans`（short for answer).
+The result (i.e., the number of embeddings) is stored in `ans`.
 
 
 
@@ -138,9 +136,8 @@ And the result is stored in the variable `ans`（short for answer).
 
 If you are still confused, you can see `tianhe/baseline_test.cpp` as an example. This program is following steps above.
 
-Many functions are implemented for debugging and experiments, you can just ignore them.
-
 ## How to run the distributed version
+
 GraphPi uses MPI to implement the distributed version.
 
 You can see `src/run_mpi_trivial.cpp` as an example.
