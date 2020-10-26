@@ -322,10 +322,12 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
                     val = val * VertexSet::unorderd_subtraction_size(vertex_set[id], subtraction_set);
                 }
                 else {
-                    int id = loop_set_prefix_ids[cur_graph[cur_graph_rank][0]];
-                    tmp_set.copy(vertex_set[id].get_size(), vertex_set[id].get_data_ptr());
+                    int id0 = loop_set_prefix_ids[cur_graph[cur_graph_rank][0]];
+                    int id1 = loop_set_prefix_ids[cur_graph[cur_graph_rank][1]];
+                    tmp_set.init();
+                    tmp_set.intersection(vertex_set[id0], vertex_set[id1]);
 
-                    for(int i = 1; i < cur_graph[cur_graph_rank].size(); ++i) {
+                    for(int i = 2; i < cur_graph[cur_graph_rank].size(); ++i) {
                         int id = loop_set_prefix_ids[cur_graph[cur_graph_rank][i]];
                         tmp_set.intersection_with(vertex_set[id]);
                     }
