@@ -19,6 +19,19 @@ void VertexSet::init()
     }
 }
 
+//this function is only used for tmp_set in graph.cpp (i.e., init(Graph.max_degree))
+void VertexSet::init(int input_size)
+{
+    if (allocate == true && data != nullptr)
+        size = 0;
+    else
+    {
+        size = 0;
+        allocate = true;
+        data = new int[input_size];
+    }
+}
+
 void VertexSet::init(int input_size, int* input_data)
 {
     if (allocate == true && data != nullptr)
@@ -28,9 +41,8 @@ void VertexSet::init(int input_size, int* input_data)
     allocate = false;
 }
 
-void VertexSet::copy(int input_size, int* input_data)
+void VertexSet::copy(int input_size, const int* input_data)
 {
-    init();
     size = input_size;
     for(int i = 0; i < input_size; ++i) data[i] = input_data[i];
 }
@@ -43,6 +55,11 @@ VertexSet::~VertexSet()
 
 void VertexSet::intersection(const VertexSet& set0, const VertexSet& set1, int min_vertex, bool clique)
 {
+    if (&set0 == &set1)
+    {
+        copy(set0.get_size(), set0.get_data_ptr());
+        return;
+    }
     int i = 0;
     int j = 0;
     int size0 = set0.get_size();
@@ -103,6 +120,8 @@ void VertexSet::intersection(const VertexSet& set0, const VertexSet& set1, int m
 }
 
 void VertexSet::intersection_with(const VertexSet& set1) {
+    if (this == &set1)
+        return;
     const VertexSet& set0 = *this;
     int i = 0;
     int j = 0;

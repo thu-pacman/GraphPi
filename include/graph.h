@@ -43,6 +43,8 @@ public:
 
     //general pattern matching algorithm with multi thread ans multi process
     long long pattern_matching_mpi(const Schedule& schedule, int thread_count, bool clique = false);
+
+    int max_degree;
 private:
     friend Graphmpi;
     void tc_mt(long long * global_ans);

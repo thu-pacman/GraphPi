@@ -112,6 +112,7 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
     // The max size of intersections is the second largest degree.
     //TODO VertexSet::max_intersection_size has different value with different dataset, but we use a static variable now.
     VertexSet::max_intersection_size = std::max( VertexSet::max_intersection_size, degree[g->v_cnt - 2]);
+    g->max_degree = degree[g->v_cnt - 1];
     delete[] degree;
     if(tmp_v != g->v_cnt) {
         printf("vertex number error!\n");
@@ -177,6 +178,7 @@ bool DataLoader::twitter_load_data(Graph *&g, DataType type, const char* path, i
     g->e_cnt = buffer[1];
     int mx_degree = buffer[2];
     VertexSet::max_intersection_size = std::max( VertexSet::max_intersection_size, mx_degree);
+    g->max_degree = mx_degree;
     g->edge = new int [g->e_cnt];
     g->vertex = new unsigned int [g->v_cnt + 1];
     for(int i = 0; i < g->v_cnt + 1; ++i)
@@ -220,6 +222,7 @@ bool DataLoader::load_complete(Graph* &g, int clique_size) {
     // The max size of intersections is the second largest degree.
     //TODO VertexSet::max_intersection_size has different value with different dataset, but we use a static variable now.
     VertexSet::max_intersection_size = std::max( VertexSet::max_intersection_size, degree[g->v_cnt - 2]);
+    g->max_degree = degree[g->v_cnt - 1];
     delete[] degree;
     if(tmp_v != g->v_cnt) {
         printf("vertex number error!\n");

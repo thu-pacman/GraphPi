@@ -324,7 +324,7 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
                 else {
                     int id0 = loop_set_prefix_ids[cur_graph[cur_graph_rank][0]];
                     int id1 = loop_set_prefix_ids[cur_graph[cur_graph_rank][1]];
-                    tmp_set.init();
+                    tmp_set.init(this->max_degree);
                     tmp_set.intersection(vertex_set[id0], vertex_set[id1]);
 
                     for(int i = 2; i < cur_graph[cur_graph_rank].size(); ++i) {
@@ -389,7 +389,7 @@ void Graph::pattern_matching_aggressive_func(const Schedule& schedule, VertexSet
         }
         if( is_zero ) continue;
         //subtraction_set.insert_ans_sort(vertex);
-        subtraction_set.push_back(vertex); 
+        subtraction_set.push_back(vertex);
         pattern_matching_aggressive_func(schedule, vertex_set, subtraction_set, tmp_set, local_ans, depth + 1);// @@@
         subtraction_set.pop_back(); // @@@
     } 
