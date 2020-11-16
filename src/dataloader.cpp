@@ -7,7 +7,39 @@
 
 bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int oriented_type) {
     if(type == Patents || type == Orkut || type == complete8 || type == LiveJournal || type == MiCo || type == CiteSeer || type == Wiki_Vote) {
-        return general_load_data(g, type, path, oriented_type);
+        //load triangle counting information
+        long long tri_cnt;
+        switch(type) {
+            case DataType::Patents : {
+                                         tri_cnt = Patents_tri_cnt;
+                                         break;
+                                     }
+            case DataType::LiveJournal : {
+                                             tri_cnt = LiveJournal_tri_cnt;
+                                             break;
+                                         }
+            case DataType::MiCo : {
+                                      tri_cnt = MiCo_tri_cnt;
+                                      break;
+                                  }
+            case DataType::CiteSeer : {
+                                          tri_cnt = CiteSeer_tri_cnt;
+                                          break;
+                                      }
+            case DataType::Wiki_Vote : {
+                                           tri_cnt = Wiki_Vote_tri_cnt;
+                                           break;
+                                       }
+            case DataType::Orkut : {
+                                       tri_cnt = Orkut_tri_cnt;
+                                       break;
+                                   }
+            default : {
+                          tri_cnt = -1;
+                          break;
+                      }
+        }
+        return general_load_data(g, tri_cnt, path, oriented_type);
     }
 
     if( type == Twitter) {
@@ -17,7 +49,11 @@ bool DataLoader::load_data(Graph* &g, DataType type, const char* path, int orien
     return false;
 }
 
-bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, int oriented_type) {
+bool DataLoader::load_data(Graph* &g, const long long tri_cnt, const char* path, int oriented_type) {
+    return general_load_data(g, tri_cnt, path, oriented_type);
+}
+
+bool DataLoader::general_load_data(Graph *&g, const long long tri_cnt, const char* path, int oriented_type) {
     if (freopen(path, "r", stdin) == NULL)
     {
         printf("File not found. %s\n", path);
@@ -26,37 +62,7 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
     printf("Load begin in %s\n",path);
     g = new Graph();
 
-    //load triangle counting information
-    switch(type) {
-        case DataType::Patents : {
-            g->tri_cnt = Patents_tri_cnt;
-            break;
-        }
-        case DataType::LiveJournal : {
-            g->tri_cnt = LiveJournal_tri_cnt;
-            break;
-        }
-        case DataType::MiCo : {
-            g->tri_cnt = MiCo_tri_cnt;
-            break;
-        }
-        case DataType::CiteSeer : {
-            g->tri_cnt = CiteSeer_tri_cnt;
-            break;
-        }
-        case DataType::Wiki_Vote : {
-            g->tri_cnt = Wiki_Vote_tri_cnt;
-            break;
-        }
-        case DataType::Orkut : {
-            g->tri_cnt = Orkut_tri_cnt;
-            break;
-        }
-        default : {
-            g->tri_cnt = -1;
-            break;
-        }
-    }
+    g->tri_cnt = tri_cnt;
 
     scanf("%d%u",&g->v_cnt,&g->e_cnt);
     int* degree = new int[g->v_cnt];
@@ -71,7 +77,7 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
     tmp_e = 0;
     while(scanf("%d%d",&x,&y)!=EOF) {
         if(x == y) {
-            printf("find self circle\n");
+            //printf("find self circle\n");
             g->e_cnt -=2;
             continue;
             //return false;
@@ -84,10 +90,12 @@ bool DataLoader::general_load_data(Graph *&g, DataType type, const char* path, i
         e[tmp_e++] = std::make_pair(y,x);
         ++degree[x];
         ++degree[y];
-        //if(tmp_e % 1000000u == 0u) {
-        //    printf("load %u edges\n",tmp_e);
-        //    fflush(stdout);
-        //}
+   /* 
+    if(tmp_e % 1000000u == 0u) {
+            printf("load %u edges\n",tmp_e);
+            fflush(stdout);
+        }
+        */
     }
 
     // oriented_type == 0 do nothing

@@ -34,6 +34,8 @@ public:
         //               == 1 high degree first
         //               == 2 low degree first
     bool load_complete(Graph* &g, int clique_size);
+    
+    bool load_data(Graph* &g, const long long tri_cnt, const char* path, int oriented_type = 0);
 
 private:
     static bool cmp_pair(std::pair<int,int>a, std::pair<int,int>b);
@@ -41,7 +43,7 @@ private:
     static bool cmp_degree_lt(std::pair<int,int> a,std::pair<int,int> b);
 
     long long comb(int n,int k);
-    bool general_load_data(Graph* &g, DataType type, const char* path, int oriented_type = 0);
+    bool general_load_data(Graph* &g, const long long tri_cnt, const char* path, int oriented_type = 0);
     bool twitter_load_data(Graph* &g, DataType type, const char* path, int oriented_type = 0);
 
     std::map<int,int> id;
