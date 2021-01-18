@@ -226,6 +226,7 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
             else
                 pattern_matching_func(schedule, vertex_set, subtraction_set, local_ans, 1, clique);
             subtraction_set.pop_back();
+            /*
             if( (vertex & (-vertex)) == (1<<15) ) {
                 current_time = get_wall_time();
                 if( current_time - start_time > max_running_time) {
@@ -233,7 +234,7 @@ long long Graph::pattern_matching(const Schedule& schedule, int thread_count, bo
                     fflush(stdout);
                     assert(0);
                 }
-            }
+            }*/
         }
         delete[] vertex_set;
         // TODO : Computing multiplicty for a pattern
