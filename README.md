@@ -143,3 +143,81 @@ GraphPi uses MPI to implement the distributed version.
 You can see `src/run_mpi_trivial.cpp` as an example.
 
 The parameters used in the distributed version are the same as those used in the single node version. You can choose to pass parameters through the command line or modify them directly in `src/run_mpi_trivial.cpp`.
+
+## How to enable your own dataset
+
+Some codes should be modified to enable your own dataset. Please follow the steps below.
+
+### Step0: data format and dataset name
+
+GraphPi only accepts input dataset of specific format: 
+
+```
+The first line should contain two integers: the number of vertices and the number of edges respectively. From the second line, each line contains two integers `x`and ` y`, representing an undirected edge `(x,y)` in the graph. The wiki-vote dataset has been placed at GraphPi/dataset/wiki-vote_input as an example.
+```
+
+And the dataset needs a name, taking `MyDataset` as an example.
+
+### Step1: Code changes in include/dataloader.h
+
+The name `MyDataset` should be added to `DataType`:
+
+```c++
+enum DataType {
+  Patents,
+  Orkut,
+  ...
+  MyDataset,
+  Invalid
+}
+```
+
+And because GraphPi's performance model needs the number of triangles in the dataset, a constant should be added (Assuming that there are 10000 triangles in MyDataset) :
+
+```
+const long long MyDataset_tri_cnt = 10000LL;
+```
+
+### Step2: Code changes in src/dataloader.cpp
+
+The function `load_data` and `general_load_data`should be changed.
+
+In function`load_data`, `MyDataset` need to be added to the first if condition:
+
+```c++
+if(type == Patents || type == Orkut || ... || type == MyDataset) {
+  ...
+}
+```
+
+And in function `general_load_data`, the switch-case statements should be modified:
+
+```c++
+switch(type) {
+  case DataType::Patents : {
+    g->tri_cnt = Patents_tri_cnt;
+  }
+  ...
+  ...  
+  case DataType::MyDataset : {
+  	g->tri_cnt = Mydataset_tri_cnt;    
+  }    
+}
+```
+
+###Step3: Code changes in src/common.cpp
+
+The function `GetDataType` should be changed.
+
+Add a new if condition statement for `MyDataset`:
+
+```c++
+if( str == "MyDataset") {
+  type = DataType::MyDataset;
+}
+```
+
+After these steps, you can use `MyDataset` for pattern matching like others.
+
+
+
