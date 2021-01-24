@@ -35,6 +35,14 @@ void test_pattern(Graph* g, const Pattern &pattern, int performance_modeling_typ
 }
 
 int main(int argc,char *argv[]) {
+
+    if(argc < 5) {
+        printf("Usage: %s dataset_name graph_file pattern_size pattern_adjacency_matrix\n", argv[0]);
+        printf("Example(Triangle counting on dataset WikiVote) : \n");
+        printf("%s Wiki-Vote ../../dataset/wiki-vote_input 3 011101110\n", argv[0]);
+        return 0;
+    }
+
     Graph *g;
     DataLoader D;
 
@@ -44,8 +52,9 @@ int main(int argc,char *argv[]) {
     int size = atoi(argv[3]);
     char* adj_mat = argv[4];
 
-    int test_type = atoi(argv[5]);
-    
+    // comments in include/schedule.h explain the meaning of these parameters.
+    int test_type = 1; // performance_modeling_type = restricts_type = use_in_exclusion_optimize = 1
+
     DataType my_type;
     
     GetDataType(my_type, type);
@@ -61,7 +70,7 @@ int main(int argc,char *argv[]) {
     fflush(stdout);
 
     Pattern p(size, adj_mat);
-    test_pattern(g, p, test_type, test_type, argc > 6 && argv[6][0] == '1');
+    test_pattern(g, p, test_type, test_type, test_type);
     
     delete g;
 }
