@@ -144,6 +144,8 @@ You can see `src/run_mpi_trivial.cpp` as an example.
 
 The parameters used in the distributed version are the same as those used in the single node version. You can choose to pass parameters through the command line or modify them directly in `src/run_mpi_trivial.cpp`.
 
+Note that if you run more than 24 threads on a node, you need to modify the MAXTHREAD variable in the include/graphmpi.h.
+
 ## How to enable your own dataset
 
 Some codes should be modified to enable your own dataset. Please follow the steps below.
